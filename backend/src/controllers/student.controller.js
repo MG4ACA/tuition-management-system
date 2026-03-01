@@ -17,9 +17,18 @@ exports.getAll = async (req, res) => {
   `;
   const params = [req.user.id];
 
-  if (batch_id)     { sql += ' AND sb.batch_id = ?';      params.push(batch_id); }
-  if (institute_id) { sql += ' AND b.institute_id = ?';   params.push(institute_id); }
-  if (search)       { sql += ' AND (s.name LIKE ? OR s.email LIKE ? OR s.phone LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
+  if (batch_id) {
+    sql += ' AND sb.batch_id = ?';
+    params.push(batch_id);
+  }
+  if (institute_id) {
+    sql += ' AND b.institute_id = ?';
+    params.push(institute_id);
+  }
+  if (search) {
+    sql += ' AND (s.name LIKE ? OR s.email LIKE ? OR s.phone LIKE ?)';
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
 
   sql += ' ORDER BY s.name';
   const [rows] = await pool.query(sql, params);
@@ -32,7 +41,7 @@ exports.getOne = async (req, res) => {
     `SELECT s.*, u.email AS portal_email
      FROM students s LEFT JOIN users u ON u.id=s.user_id
      WHERE s.id=?`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!rows.length) return res.status(404).json({ success: false, message: 'Student not found' });
 
@@ -43,7 +52,7 @@ exports.getOne = async (req, res) => {
      JOIN batches b ON b.id=sb.batch_id
      JOIN institutes i ON i.id=b.institute_id
      WHERE sb.student_id=? AND sb.is_active=1`,
-    [req.params.id]
+    [req.params.id],
   );
 
   res.json({ success: true, data: { ...rows[0], batches } });
@@ -51,19 +60,45 @@ exports.getOne = async (req, res) => {
 
 // POST /api/students
 exports.create = async (req, res) => {
-  const { name, email, phone, dob, gender, address, parent_name, parent_phone, parent_email, notes, batch_ids } = req.body;
+  const {
+    name,
+    email,
+    phone,
+    dob,
+    gender,
+    address,
+    parent_name,
+    parent_phone,
+    parent_email,
+    notes,
+    batch_ids,
+  } = req.body;
   const qr_token = uuidv4();
 
   const [result] = await pool.query(
     'INSERT INTO students (name,email,phone,dob,gender,address,parent_name,parent_phone,parent_email,notes,qr_token) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-    [name, email, phone, dob, gender, address, parent_name, parent_phone, parent_email, notes, qr_token]
+    [
+      name,
+      email,
+      phone,
+      dob,
+      gender,
+      address,
+      parent_name,
+      parent_phone,
+      parent_email,
+      notes,
+      qr_token,
+    ],
   );
   const studentId = result.insertId;
 
   // Enroll in batches
   if (batch_ids?.length) {
-    const values = batch_ids.map(bid => [studentId, bid]);
-    await pool.query('INSERT IGNORE INTO student_batches (student_id, batch_id) VALUES ?', [values]);
+    const values = batch_ids.map((bid) => [studentId, bid]);
+    await pool.query('INSERT IGNORE INTO student_batches (student_id, batch_id) VALUES ?', [
+      values,
+    ]);
   }
 
   const [rows] = await pool.query('SELECT * FROM students WHERE id=?', [studentId]);
@@ -72,10 +107,35 @@ exports.create = async (req, res) => {
 
 // PUT /api/students/:id
 exports.update = async (req, res) => {
-  const { name, email, phone, dob, gender, address, parent_name, parent_phone, parent_email, notes, is_active } = req.body;
+  const {
+    name,
+    email,
+    phone,
+    dob,
+    gender,
+    address,
+    parent_name,
+    parent_phone,
+    parent_email,
+    notes,
+    is_active,
+  } = req.body;
   await pool.query(
     'UPDATE students SET name=?,email=?,phone=?,dob=?,gender=?,address=?,parent_name=?,parent_phone=?,parent_email=?,notes=?,is_active=? WHERE id=?',
-    [name, email, phone, dob, gender, address, parent_name, parent_phone, parent_email, notes, is_active, req.params.id]
+    [
+      name,
+      email,
+      phone,
+      dob,
+      gender,
+      address,
+      parent_name,
+      parent_phone,
+      parent_email,
+      notes,
+      is_active,
+      req.params.id,
+    ],
   );
   const [rows] = await pool.query('SELECT * FROM students WHERE id=?', [req.params.id]);
   res.json({ success: true, data: rows[0] });
@@ -90,16 +150,19 @@ exports.remove = async (req, res) => {
 // POST /api/students/:id/enroll
 exports.enrollBatch = async (req, res) => {
   const { batch_id } = req.body;
-  await pool.query('INSERT IGNORE INTO student_batches (student_id, batch_id) VALUES (?,?)', [req.params.id, batch_id]);
+  await pool.query('INSERT IGNORE INTO student_batches (student_id, batch_id) VALUES (?,?)', [
+    req.params.id,
+    batch_id,
+  ]);
   res.json({ success: true, message: 'Enrolled' });
 };
 
 // DELETE /api/students/:id/enroll/:batch_id
 exports.unenrollBatch = async (req, res) => {
-  await pool.query(
-    'UPDATE student_batches SET is_active=0 WHERE student_id=? AND batch_id=?',
-    [req.params.id, req.params.batch_id]
-  );
+  await pool.query('UPDATE student_batches SET is_active=0 WHERE student_id=? AND batch_id=?', [
+    req.params.id,
+    req.params.batch_id,
+  ]);
   res.json({ success: true, message: 'Unenrolled' });
 };
 
@@ -113,15 +176,17 @@ exports.getByQR = async (req, res) => {
      LEFT JOIN batches b ON b.id=sb.batch_id
      WHERE s.qr_token=? AND s.is_active=1
      GROUP BY s.id`,
-    [req.params.token]
+    [req.params.token],
   );
   if (!rows.length) return res.status(404).json({ success: false, message: 'Student not found' });
 
   // Check fee status for current month
-  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
   const [feeRows] = await pool.query(
     'SELECT status FROM fee_records WHERE student_id=? AND month=? LIMIT 1',
-    [rows[0].id, monthStart.toISOString().split('T')[0]]
+    [rows[0].id, monthStart.toISOString().split('T')[0]],
   );
 
   res.json({
@@ -135,10 +200,7 @@ exports.getByQR = async (req, res) => {
 
 // GET /api/students/me  (student portal - own profile)
 exports.getMyProfile = async (req, res) => {
-  const [rows] = await pool.query(
-    `SELECT s.* FROM students s WHERE s.user_id = ?`,
-    [req.user.id]
-  );
+  const [rows] = await pool.query(`SELECT s.* FROM students s WHERE s.user_id = ?`, [req.user.id]);
   if (!rows.length) return res.status(404).json({ success: false, message: 'Profile not found' });
   res.json({ success: true, data: rows[0] });
 };

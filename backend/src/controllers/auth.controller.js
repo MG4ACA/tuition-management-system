@@ -1,11 +1,15 @@
 const bcrypt = require('bcryptjs');
-const jwt    = require('jsonwebtoken');
-const pool   = require('../config/db');
+const jwt = require('jsonwebtoken');
+const pool = require('../config/db');
 
 const generateTokens = (user) => {
   const payload = { id: user.id, email: user.email, role: user.role };
-  const accessToken  = jwt.sign(payload, process.env.JWT_ACCESS_SECRET,  { expiresIn: process.env.JWT_ACCESS_EXPIRES  || '15m' });
-  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d' });
+  const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: process.env.JWT_ACCESS_EXPIRES || '15m',
+  });
+  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d',
+  });
   return { accessToken, refreshToken };
 };
 
@@ -24,8 +28,11 @@ exports.login = async (req, res) => {
 
   // Persist refresh token
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await pool.query('INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?,?,?)',
-    [user.id, refreshToken, expiresAt]);
+  await pool.query('INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?,?,?)', [
+    user.id,
+    refreshToken,
+    expiresAt,
+  ]);
 
   res.json({
     success: true,
@@ -40,7 +47,8 @@ exports.login = async (req, res) => {
 // POST /api/auth/refresh
 exports.refresh = async (req, res) => {
   const { refreshToken } = req.body;
-  if (!refreshToken) return res.status(400).json({ success: false, message: 'Refresh token required' });
+  if (!refreshToken)
+    return res.status(400).json({ success: false, message: 'Refresh token required' });
 
   let payload;
   try {
@@ -51,11 +59,14 @@ exports.refresh = async (req, res) => {
 
   const [rows] = await pool.query(
     'SELECT * FROM refresh_tokens WHERE token = ? AND expires_at > NOW()',
-    [refreshToken]
+    [refreshToken],
   );
-  if (!rows.length) return res.status(401).json({ success: false, message: 'Token revoked or expired' });
+  if (!rows.length)
+    return res.status(401).json({ success: false, message: 'Token revoked or expired' });
 
-  const [userRows] = await pool.query('SELECT * FROM users WHERE id = ? AND is_active = 1', [payload.id]);
+  const [userRows] = await pool.query('SELECT * FROM users WHERE id = ? AND is_active = 1', [
+    payload.id,
+  ]);
   if (!userRows.length) return res.status(401).json({ success: false, message: 'User not found' });
 
   const user = userRows[0];
@@ -64,8 +75,11 @@ exports.refresh = async (req, res) => {
   // Rotate refresh token
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [refreshToken]);
-  await pool.query('INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?,?,?)',
-    [user.id, newRefreshToken, expiresAt]);
+  await pool.query('INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?,?,?)', [
+    user.id,
+    newRefreshToken,
+    expiresAt,
+  ]);
 
   res.json({ success: true, data: { accessToken, refreshToken: newRefreshToken } });
 };
@@ -83,7 +97,7 @@ exports.logout = async (req, res) => {
 exports.me = async (req, res) => {
   const [rows] = await pool.query(
     'SELECT id, name, email, role, phone, created_at FROM users WHERE id = ?',
-    [req.user.id]
+    [req.user.id],
   );
   res.json({ success: true, data: rows[0] });
 };
@@ -94,7 +108,8 @@ exports.changePassword = async (req, res) => {
 
   const [rows] = await pool.query('SELECT password_hash FROM users WHERE id = ?', [req.user.id]);
   const valid = await bcrypt.compare(currentPassword, rows[0].password_hash);
-  if (!valid) return res.status(400).json({ success: false, message: 'Current password incorrect' });
+  if (!valid)
+    return res.status(400).json({ success: false, message: 'Current password incorrect' });
 
   const hash = await bcrypt.hash(newPassword, 12);
   await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.user.id]);
@@ -110,16 +125,65 @@ exports.registerStudent = async (req, res) => {
   const { student_id, name, email, password } = req.body;
 
   const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
-  if (existing.length) return res.status(409).json({ success: false, message: 'Email already registered' });
+  if (existing.length)
+    return res.status(409).json({ success: false, message: 'Email already registered' });
 
   const hash = await bcrypt.hash(password, 12);
   const [result] = await pool.query(
     'INSERT INTO users (name, email, password_hash, role) VALUES (?,?,?,?)',
-    [name, email, hash, 'student']
+    [name, email, hash, 'student'],
   );
 
   // Link user to student record
   await pool.query('UPDATE students SET user_id = ? WHERE id = ?', [result.insertId, student_id]);
 
-  res.status(201).json({ success: true, message: 'Student portal account created', data: { user_id: result.insertId } });
+  res
+    .status(201)
+    .json({
+      success: true,
+      message: 'Student portal account created',
+      data: { user_id: result.insertId },
+    });
+};
+
+// POST /api/auth/register-parent  (teacher creates parent portal account)
+exports.registerParent = async (req, res) => {
+  const { student_id, name, email, password } = req.body;
+  if (!student_id || !name || !email || !password)
+    return res
+      .status(400)
+      .json({ success: false, message: 'student_id, name, email and password are required' });
+
+  const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+  if (existing.length)
+    return res.status(409).json({ success: false, message: 'Email already registered' });
+
+  const [stuRows] = await pool.query('SELECT id, parent_user_id FROM students WHERE id = ?', [
+    student_id,
+  ]);
+  if (!stuRows.length)
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  if (stuRows[0].parent_user_id)
+    return res
+      .status(409)
+      .json({ success: false, message: 'Parent account already exists for this student' });
+
+  const hash = await bcrypt.hash(password, 12);
+  const [result] = await pool.query(
+    'INSERT INTO users (name, email, password_hash, role) VALUES (?,?,?,?)',
+    [name, email, hash, 'parent'],
+  );
+
+  await pool.query('UPDATE students SET parent_user_id = ? WHERE id = ?', [
+    result.insertId,
+    student_id,
+  ]);
+
+  res
+    .status(201)
+    .json({
+      success: true,
+      message: 'Parent portal account created',
+      data: { user_id: result.insertId },
+    });
 };

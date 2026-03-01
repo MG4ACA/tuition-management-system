@@ -5,9 +5,11 @@ exports.overview = async (req, res) => {
   const { institute_id } = req.query;
   const teacherId = req.user.id;
 
-  const instFilter   = institute_id ? 'AND i.id = ?' : '';
-  const params       = institute_id ? [teacherId, institute_id] : [teacherId];
-  const paramsDouble = institute_id ? [teacherId, institute_id, teacherId, institute_id] : [teacherId, teacherId];
+  const instFilter = institute_id ? 'AND i.id = ?' : '';
+  const params = institute_id ? [teacherId, institute_id] : [teacherId];
+  const paramsDouble = institute_id
+    ? [teacherId, institute_id, teacherId, institute_id]
+    : [teacherId, teacherId];
 
   // Total students
   const [[students]] = await pool.query(
@@ -15,7 +17,7 @@ exports.overview = async (req, res) => {
      FROM student_batches sb JOIN batches b ON b.id=sb.batch_id
      JOIN institutes i ON i.id=b.institute_id
      WHERE i.teacher_id=? ${instFilter} AND sb.is_active=1`,
-    params
+    params,
   );
 
   // Total batches
@@ -23,26 +25,27 @@ exports.overview = async (req, res) => {
     `SELECT COUNT(*) AS total FROM batches b
      JOIN institutes i ON i.id=b.institute_id
      WHERE i.teacher_id=? ${instFilter} AND b.is_active=1`,
-    params
+    params,
   );
 
   // Total institutes
   const [[institutes]] = await pool.query(
     `SELECT COUNT(*) AS total FROM institutes WHERE teacher_id=? ${institute_id ? 'AND id=?' : ''} AND is_active=1`,
-    params
+    params,
   );
 
   // Revenue this month vs last month
-  const thisMonth = `${new Date().toISOString().slice(0,7)}-01`;
-  const lastMonthDate = new Date(); lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
-  const lastMonth = `${lastMonthDate.toISOString().slice(0,7)}-01`;
+  const thisMonth = `${new Date().toISOString().slice(0, 7)}-01`;
+  const lastMonthDate = new Date();
+  lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+  const lastMonth = `${lastMonthDate.toISOString().slice(0, 7)}-01`;
 
   const [[revThis]] = await pool.query(
     `SELECT COALESCE(SUM(fr.amount),0) AS total
      FROM fee_records fr JOIN batches b ON b.id=fr.batch_id
      JOIN institutes i ON i.id=b.institute_id
      WHERE i.teacher_id=? ${instFilter} AND fr.status='paid' AND fr.month=?`,
-    [...params, thisMonth]
+    [...params, thisMonth],
   );
 
   const [[revLast]] = await pool.query(
@@ -50,7 +53,7 @@ exports.overview = async (req, res) => {
      FROM fee_records fr JOIN batches b ON b.id=fr.batch_id
      JOIN institutes i ON i.id=b.institute_id
      WHERE i.teacher_id=? ${instFilter} AND fr.status='paid' AND fr.month=?`,
-    [...params, lastMonth]
+    [...params, lastMonth],
   );
 
   // Today's attendance
@@ -60,7 +63,7 @@ exports.overview = async (req, res) => {
      JOIN batches b ON b.id=a.batch_id
      JOIN institutes i ON i.id=b.institute_id
      WHERE i.teacher_id=? ${instFilter} AND a.date=?`,
-    [...params, today]
+    [...params, today],
   );
 
   res.json({
@@ -82,7 +85,9 @@ exports.revenueChart = async (req, res) => {
   const teacherId = req.user.id;
 
   const instFilter = institute_id ? 'AND i.id = ?' : '';
-  const params = institute_id ? [teacherId, institute_id, parseInt(months)] : [teacherId, parseInt(months)];
+  const params = institute_id
+    ? [teacherId, institute_id, parseInt(months)]
+    : [teacherId, parseInt(months)];
 
   const [rows] = await pool.query(
     `SELECT DATE_FORMAT(fr.month,'%Y-%m') AS month,
@@ -96,7 +101,7 @@ exports.revenueChart = async (req, res) => {
        AND fr.month >= DATE_SUB(DATE_FORMAT(NOW(),'%Y-%m-01'), INTERVAL ? MONTH)
      GROUP BY DATE_FORMAT(fr.month,'%Y-%m')
      ORDER BY month`,
-    params
+    params,
   );
   res.json({ success: true, data: rows });
 };
@@ -118,7 +123,10 @@ exports.attendanceTrend = async (req, res) => {
   `;
   const params = [req.user.id, parseInt(days)];
 
-  if (batch_id) { sql += ' AND a.batch_id=?'; params.push(batch_id); }
+  if (batch_id) {
+    sql += ' AND a.batch_id=?';
+    params.push(batch_id);
+  }
   sql += ' GROUP BY a.date ORDER BY a.date';
 
   const [rows] = await pool.query(sql, params);
@@ -137,7 +145,7 @@ exports.studentGrowth = async (req, res) => {
      WHERE i.teacher_id=? AND s.created_at >= DATE_SUB(NOW(), INTERVAL ? MONTH)
      GROUP BY DATE_FORMAT(s.created_at,'%Y-%m')
      ORDER BY month`,
-    [req.user.id, parseInt(months)]
+    [req.user.id, parseInt(months)],
   );
   res.json({ success: true, data: rows });
 };
@@ -145,12 +153,10 @@ exports.studentGrowth = async (req, res) => {
 // GET /api/analytics/fee-status?institute_id=&month=
 exports.feeStatusBreakdown = async (req, res) => {
   const { institute_id, month } = req.query;
-  const monthDate = month ? `${month}-01` : `${new Date().toISOString().slice(0,7)}-01`;
+  const monthDate = month ? `${month}-01` : `${new Date().toISOString().slice(0, 7)}-01`;
 
   const instFilter = institute_id ? 'AND i.id = ?' : '';
-  const params = institute_id
-    ? [req.user.id, institute_id, monthDate]
-    : [req.user.id, monthDate];
+  const params = institute_id ? [req.user.id, institute_id, monthDate] : [req.user.id, monthDate];
 
   const [rows] = await pool.query(
     `SELECT fr.status, COUNT(*) AS count, COALESCE(SUM(fr.amount),0) AS amount
@@ -159,7 +165,7 @@ exports.feeStatusBreakdown = async (req, res) => {
      JOIN institutes i ON i.id=b.institute_id
      WHERE i.teacher_id=? ${instFilter} AND fr.month=?
      GROUP BY fr.status`,
-    params
+    params,
   );
   res.json({ success: true, data: rows });
 };

@@ -1,6 +1,6 @@
+import api from '@/api/axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import api from '@/api/axios';
 
 export const useMarksStore = defineStore('marks', () => {
   const records = ref([]);
@@ -29,14 +29,14 @@ export const useMarksStore = defineStore('marks', () => {
 
   async function update(id, payload) {
     const { data } = await api.put(`/marks/${id}`, payload);
-    const idx = records.value.findIndex(r => r.id === id);
+    const idx = records.value.findIndex((r) => r.id === id);
     if (idx !== -1) records.value[idx] = data.data;
     return data.data;
   }
 
   async function remove(id) {
     await api.delete(`/marks/${id}`);
-    records.value = records.value.filter(r => r.id !== id);
+    records.value = records.value.filter((r) => r.id !== id);
   }
 
   async function getMyMarks() {

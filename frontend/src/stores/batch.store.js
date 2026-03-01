@@ -1,6 +1,6 @@
+import api from '@/api/axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import api from '@/api/axios';
 
 export const useBatchStore = defineStore('batch', () => {
   const batches = ref([]);
@@ -24,14 +24,14 @@ export const useBatchStore = defineStore('batch', () => {
 
   async function update(id, payload) {
     const { data } = await api.put(`/batches/${id}`, payload);
-    const idx = batches.value.findIndex(b => b.id === id);
+    const idx = batches.value.findIndex((b) => b.id === id);
     if (idx !== -1) batches.value[idx] = data.data;
     return data.data;
   }
 
   async function remove(id) {
     await api.delete(`/batches/${id}`);
-    batches.value = batches.value.filter(b => b.id !== id);
+    batches.value = batches.value.filter((b) => b.id !== id);
   }
 
   async function getStudents(batchId) {

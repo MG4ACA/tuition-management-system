@@ -1,11 +1,11 @@
+import api from '@/api/axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import api from '@/api/axios';
 
 export const useInstituteStore = defineStore('institute', () => {
   const institutes = ref([]);
-  const loading    = ref(false);
-  const selected   = ref(null); // currently filtered institute
+  const loading = ref(false);
+  const selected = ref(null); // currently filtered institute
 
   async function fetchAll() {
     loading.value = true;
@@ -25,14 +25,14 @@ export const useInstituteStore = defineStore('institute', () => {
 
   async function update(id, payload) {
     const { data } = await api.put(`/institutes/${id}`, payload);
-    const idx = institutes.value.findIndex(i => i.id === id);
+    const idx = institutes.value.findIndex((i) => i.id === id);
     if (idx !== -1) institutes.value[idx] = data.data;
     return data.data;
   }
 
   async function remove(id) {
     await api.delete(`/institutes/${id}`);
-    institutes.value = institutes.value.filter(i => i.id !== id);
+    institutes.value = institutes.value.filter((i) => i.id !== id);
   }
 
   async function getSummary(id) {
@@ -44,5 +44,15 @@ export const useInstituteStore = defineStore('institute', () => {
     selected.value = id;
   }
 
-  return { institutes, loading, selected, fetchAll, create, update, remove, getSummary, setSelected };
+  return {
+    institutes,
+    loading,
+    selected,
+    fetchAll,
+    create,
+    update,
+    remove,
+    getSummary,
+    setSelected,
+  };
 });

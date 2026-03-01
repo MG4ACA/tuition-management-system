@@ -1,7 +1,7 @@
-const pool   = require('../config/db');
+const pool = require('../config/db');
 const multer = require('multer');
-const path   = require('path');
-const fs     = require('fs');
+const path = require('path');
+const fs = require('fs');
 
 // Configure multer storage
 const storage = multer.diskStorage({
@@ -37,8 +37,14 @@ exports.getAll = async (req, res) => {
              WHERE r.is_active=1`;
   const params = [];
 
-  if (batch_id)     { sql += ' AND r.batch_id=?';     params.push(batch_id); }
-  if (institute_id) { sql += ' AND r.institute_id=?'; params.push(institute_id); }
+  if (batch_id) {
+    sql += ' AND r.batch_id=?';
+    params.push(batch_id);
+  }
+  if (institute_id) {
+    sql += ' AND r.institute_id=?';
+    params.push(institute_id);
+  }
   sql += ' ORDER BY r.created_at DESC';
 
   const [rows] = await pool.query(sql, params);
@@ -52,7 +58,7 @@ exports.create = async (req, res) => {
 
   const [result] = await pool.query(
     'INSERT INTO resources (batch_id, institute_id, title, description, type, file_url) VALUES (?,?,?,?,?,?)',
-    [batch_id || null, institute_id || null, title, description, type, uploadedUrl]
+    [batch_id || null, institute_id || null, title, description, type, uploadedUrl],
   );
   const [rows] = await pool.query('SELECT * FROM resources WHERE id=?', [result.insertId]);
   res.status(201).json({ success: true, data: rows[0] });

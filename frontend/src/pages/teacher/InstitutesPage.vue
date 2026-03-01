@@ -6,18 +6,35 @@
     </div>
 
     <div class="grid">
-      <div v-for="inst in instituteStore.institutes" :key="inst.id" class="col-12 md:col-6 lg:col-4">
-        <div class="surface-card border-round-xl p-4 border-1 surface-border h-full flex flex-column gap-3">
+      <div
+        v-for="inst in instituteStore.institutes"
+        :key="inst.id"
+        class="col-12 md:col-6 lg:col-4"
+      >
+        <div
+          class="surface-card border-round-xl p-4 border-1 surface-border h-full flex flex-column gap-3"
+        >
           <div class="flex justify-content-between align-items-start">
             <div>
               <div class="font-bold text-lg">{{ inst.name }}</div>
-              <div class="text-color-secondary text-sm mt-1">{{ inst.address || 'No address' }}</div>
+              <div class="text-color-secondary text-sm mt-1">
+                {{ inst.address || 'No address' }}
+              </div>
             </div>
-            <Tag :value="inst.is_active ? 'Active' : 'Inactive'" :severity="inst.is_active ? 'success' : 'danger'" />
+            <Tag
+              :value="inst.is_active ? 'Active' : 'Inactive'"
+              :severity="inst.is_active ? 'success' : 'danger'"
+            />
           </div>
           <div class="flex gap-3 text-sm">
-            <span v-if="inst.phone"><i class="pi pi-phone mr-1" />{{ inst.phone }}</span>
-            <span v-if="inst.email"><i class="pi pi-envelope mr-1" />{{ inst.email }}</span>
+            <span v-if="inst.phone">
+              <i class="pi pi-phone mr-1" />
+              {{ inst.phone }}
+            </span>
+            <span v-if="inst.email">
+              <i class="pi pi-envelope mr-1" />
+              {{ inst.email }}
+            </span>
           </div>
           <div class="grid mt-auto" v-if="summaries[inst.id]">
             <div class="col-4 text-center">
@@ -29,13 +46,22 @@
               <div class="text-xs text-color-secondary">Students</div>
             </div>
             <div class="col-4 text-center">
-              <div class="font-bold text-xl text-primary">{{ formatCurrency(summaries[inst.id].revenue) }}</div>
+              <div class="font-bold text-xl text-primary">
+                {{ formatCurrency(summaries[inst.id].revenue) }}
+              </div>
               <div class="text-xs text-color-secondary">Revenue</div>
             </div>
           </div>
           <div class="flex gap-2 mt-2">
             <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(inst)" />
-            <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmDelete(inst)" />
+            <Button
+              icon="pi pi-trash"
+              text
+              rounded
+              size="small"
+              severity="danger"
+              @click="confirmDelete(inst)"
+            />
           </div>
         </div>
       </div>
@@ -49,10 +75,18 @@
     </div>
 
     <!-- Dialog -->
-    <Dialog v-model:visible="dialogVisible" :header="editing ? 'Edit Institute' : 'New Institute'" :style="{ width: '480px' }" modal>
+    <Dialog
+      v-model:visible="dialogVisible"
+      :header="editing ? 'Edit Institute' : 'New Institute'"
+      :style="{ width: '480px' }"
+      modal
+    >
       <div class="flex flex-column gap-3">
         <div class="field">
-          <label class="block mb-1 font-medium">Name <span class="text-red-500">*</span></label>
+          <label class="block mb-1 font-medium">
+            Name
+            <span class="text-red-500">*</span>
+          </label>
           <InputText v-model="form.name" class="w-full" placeholder="e.g. Colombo Branch" />
         </div>
         <div class="field">
@@ -71,39 +105,45 @@
         </div>
         <div v-if="editing" class="field">
           <label class="flex align-items-center gap-2">
-            <ToggleSwitch v-model="form.is_active" /> Active
+            <ToggleSwitch v-model="form.is_active" />
+            Active
           </label>
         </div>
       </div>
       <template #footer>
         <Button label="Cancel" text @click="dialogVisible = false" />
-        <Button :label="editing ? 'Update' : 'Create'" icon="pi pi-check" :loading="saving" @click="save" />
+        <Button
+          :label="editing ? 'Update' : 'Create'"
+          icon="pi pi-check"
+          :loading="saving"
+          @click="save"
+        />
       </template>
     </Dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useConfirm } from 'primevue/useconfirm';
-import { useToast } from 'primevue/usetoast';
 import { useInstituteStore } from '@/stores/institute.store';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
-import Textarea from 'primevue/textarea';
 import Tag from 'primevue/tag';
+import Textarea from 'primevue/textarea';
 import ToggleSwitch from 'primevue/toggleswitch';
+import { useConfirm } from 'primevue/useconfirm';
+import { useToast } from 'primevue/usetoast';
+import { onMounted, ref } from 'vue';
 
 const instituteStore = useInstituteStore();
 const confirm = useConfirm();
-const toast   = useToast();
+const toast = useToast();
 
 const dialogVisible = ref(false);
-const editing       = ref(null);
-const saving        = ref(false);
-const summaries     = ref({});
-const form          = ref(defaultForm());
+const editing = ref(null);
+const saving = ref(false);
+const summaries = ref({});
+const form = ref(defaultForm());
 
 function defaultForm() {
   return { name: '', address: '', phone: '', email: '', logo_url: '', is_active: true };
@@ -116,7 +156,8 @@ function openDialog(inst = null) {
 }
 
 async function save() {
-  if (!form.value.name) return toast.add({ severity: 'warn', summary: 'Name required', life: 2000 });
+  if (!form.value.name)
+    return toast.add({ severity: 'warn', summary: 'Name required', life: 2000 });
   saving.value = true;
   try {
     if (editing.value) {
@@ -128,7 +169,12 @@ async function save() {
     }
     dialogVisible.value = false;
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.response?.data?.message, life: 3000 });
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: e.response?.data?.message,
+      life: 3000,
+    });
   } finally {
     saving.value = false;
   }

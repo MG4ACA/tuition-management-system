@@ -2,9 +2,9 @@
   <div>
     <h2 class="mt-0">Test Results</h2>
 
-    <!-- Avg Score Card -->
+    <!-- Score summary -->
     <div
-      class="surface-card border-round-xl p-4 border-1 surface-border mb-4 flex align-items-center gap-4"
+      class="surface-card border-round-xl border-1 surface-border p-4 mb-4 flex align-items-center gap-4 flex-wrap"
     >
       <div class="text-center px-4">
         <div class="text-4xl font-bold" :class="avgClass">{{ avg }}%</div>
@@ -32,6 +32,7 @@
       >
         <Column field="test_name" header="Test" sortable />
         <Column field="batch_name" header="Batch" sortable />
+        <Column field="subject" header="Subject" />
         <Column field="test_date" header="Date" sortable>
           <template #body="{ data }">{{ data.test_date?.split('T')[0] }}</template>
         </Column>
@@ -50,21 +51,23 @@
             </div>
           </template>
         </Column>
-        <Column field="remarks" header="Remarks" />
+        <Column field="remarks" header="Remarks">
+          <template #body="{ data }">{{ data.remarks ?? '—' }}</template>
+        </Column>
       </DataTable>
     </div>
   </div>
 </template>
 
 <script setup>
-import { useMarksStore } from '@/stores/marks.store';
+import { useParentStore } from '@/stores/parent.store';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import Divider from 'primevue/divider';
 import ProgressBar from 'primevue/progressbar';
 import { computed, onMounted, ref } from 'vue';
 
-const marksStore = useMarksStore();
+const parentStore = useParentStore();
 const records = ref([]);
 const loading = ref(true);
 
@@ -74,7 +77,6 @@ const avg = computed(() => {
     records.value.reduce((s, r) => s + Number(r.percentage), 0) / records.value.length,
   );
 });
-
 const avgClass = computed(() =>
   avg.value >= 75 ? 'text-green-500' : avg.value >= 50 ? 'text-orange-500' : 'text-red-500',
 );
@@ -110,7 +112,7 @@ function scoreColor(pct) {
 
 onMounted(async () => {
   try {
-    records.value = await marksStore.getMyMarks();
+    records.value = await parentStore.getMarks();
   } finally {
     loading.value = false;
   }

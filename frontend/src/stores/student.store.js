@@ -1,10 +1,10 @@
+import api from '@/api/axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import api from '@/api/axios';
 
 export const useStudentStore = defineStore('student', () => {
   const students = ref([]);
-  const loading  = ref(false);
+  const loading = ref(false);
 
   async function fetchAll(params = {}) {
     loading.value = true;
@@ -29,14 +29,14 @@ export const useStudentStore = defineStore('student', () => {
 
   async function update(id, payload) {
     const { data } = await api.put(`/students/${id}`, payload);
-    const idx = students.value.findIndex(s => s.id === id);
+    const idx = students.value.findIndex((s) => s.id === id);
     if (idx !== -1) students.value[idx] = { ...students.value[idx], ...data.data };
     return data.data;
   }
 
   async function remove(id) {
     await api.delete(`/students/${id}`);
-    students.value = students.value.filter(s => s.id !== id);
+    students.value = students.value.filter((s) => s.id !== id);
   }
 
   async function getByQR(token) {
@@ -58,5 +58,17 @@ export const useStudentStore = defineStore('student', () => {
     return data.data;
   }
 
-  return { students, loading, fetchAll, getOne, create, update, remove, getByQR, enrollBatch, unenrollBatch, getMyProfile };
+  return {
+    students,
+    loading,
+    fetchAll,
+    getOne,
+    create,
+    update,
+    remove,
+    getByQR,
+    enrollBatch,
+    unenrollBatch,
+    getMyProfile,
+  };
 });

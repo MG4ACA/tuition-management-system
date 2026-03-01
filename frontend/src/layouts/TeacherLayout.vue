@@ -9,7 +9,8 @@
         </div>
         <Button
           :icon="sidebarCollapsed ? 'pi pi-chevron-right' : 'pi pi-chevron-left'"
-          text rounded
+          text
+          rounded
           @click="sidebarCollapsed = !sidebarCollapsed"
           class="collapse-btn"
         />
@@ -41,11 +42,20 @@
         <div v-if="!sidebarCollapsed" class="user-info px-3 py-2">
           <Avatar :label="authStore.user?.name?.[0]" shape="circle" class="mr-2" />
           <div class="text-sm">
-            <div class="font-semibold text-overflow-ellipsis overflow-hidden">{{ authStore.user?.name }}</div>
+            <div class="font-semibold text-overflow-ellipsis overflow-hidden">
+              {{ authStore.user?.name }}
+            </div>
             <div class="text-xs text-color-secondary">Teacher</div>
           </div>
         </div>
-        <Button icon="pi pi-sign-out" text rounded v-tooltip.right="'Logout'" @click="handleLogout" class="logout-btn" />
+        <Button
+          icon="pi pi-sign-out"
+          text
+          rounded
+          v-tooltip.right="'Logout'"
+          @click="handleLogout"
+          class="logout-btn"
+        />
       </div>
     </nav>
 
@@ -66,40 +76,40 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useInstituteStore } from '@/stores/institute.store';
+import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import Select from 'primevue/select';
-import Avatar from 'primevue/avatar';
 import Tag from 'primevue/tag';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
-const authStore      = useAuthStore();
+const authStore = useAuthStore();
 const instituteStore = useInstituteStore();
-const route          = useRoute();
+const route = useRoute();
 
-const sidebarCollapsed  = ref(false);
+const sidebarCollapsed = ref(false);
 const selectedInstitute = ref(null);
 
 const menuItems = [
-  { to: '/',           icon: 'pi-home',       label: 'Dashboard' },
-  { to: '/institutes', icon: 'pi-building',   label: 'Institutes' },
-  { to: '/batches',    icon: 'pi-users',      label: 'Batches' },
-  { to: '/students',   icon: 'pi-user',       label: 'Students' },
-  { to: '/attendance', icon: 'pi-qrcode',     label: 'Attendance' },
-  { to: '/marks',      icon: 'pi-chart-bar',  label: 'Marks' },
-  { to: '/fees',       icon: 'pi-wallet',     label: 'Fees' },
-  { to: '/resources',  icon: 'pi-folder',     label: 'Resources' },
+  { to: '/', icon: 'pi-home', label: 'Dashboard' },
+  { to: '/institutes', icon: 'pi-building', label: 'Institutes' },
+  { to: '/batches', icon: 'pi-users', label: 'Batches' },
+  { to: '/students', icon: 'pi-user', label: 'Students' },
+  { to: '/attendance', icon: 'pi-qrcode', label: 'Attendance' },
+  { to: '/marks', icon: 'pi-chart-bar', label: 'Marks' },
+  { to: '/fees', icon: 'pi-wallet', label: 'Fees' },
+  { to: '/resources', icon: 'pi-folder', label: 'Resources' },
 ];
 
 const currentPageTitle = computed(() => {
-  const item = menuItems.find(m => route.path === m.to || route.path.startsWith(m.to + '/'));
+  const item = menuItems.find((m) => route.path === m.to || route.path.startsWith(m.to + '/'));
   return item?.label || 'Dashboard';
 });
 
 const selectedInstituteName = computed(() => {
-  return instituteStore.institutes.find(i => i.id === selectedInstitute.value)?.name || 'All';
+  return instituteStore.institutes.find((i) => i.id === selectedInstitute.value)?.name || 'All';
 });
 
 onMounted(() => instituteStore.fetchAll());
@@ -124,7 +134,9 @@ async function handleLogout() {
   border-right: 1px solid var(--p-surface-border);
   display: flex;
   flex-direction: column;
-  transition: width 0.2s ease, min-width 0.2s ease;
+  transition:
+    width 0.2s ease,
+    min-width 0.2s ease;
   overflow: hidden;
 }
 
@@ -142,9 +154,14 @@ async function handleLogout() {
   min-height: 64px;
 }
 
-.brand { display: flex; align-items: center; }
+.brand {
+  display: flex;
+  align-items: center;
+}
 
-.collapse-btn { margin-left: auto; }
+.collapse-btn {
+  margin-left: auto;
+}
 
 .sidebar-menu {
   list-style: none;
@@ -167,9 +184,16 @@ async function handleLogout() {
   overflow: hidden;
 }
 
-.menu-item:hover { background: var(--p-surface-hover); }
-.menu-item.active { background: var(--p-primary-color); color: white; }
-.menu-item.active i { color: white; }
+.menu-item:hover {
+  background: var(--p-surface-hover);
+}
+.menu-item.active {
+  background: var(--p-primary-color);
+  color: white;
+}
+.menu-item.active i {
+  color: white;
+}
 
 .sidebar-footer {
   border-top: 1px solid var(--p-surface-border);
@@ -179,9 +203,16 @@ async function handleLogout() {
   justify-content: space-between;
 }
 
-.user-info { display: flex; align-items: center; flex: 1; min-width: 0; }
+.user-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
 
-.logout-btn { flex-shrink: 0; }
+.logout-btn {
+  flex-shrink: 0;
+}
 
 .main-content {
   flex: 1;

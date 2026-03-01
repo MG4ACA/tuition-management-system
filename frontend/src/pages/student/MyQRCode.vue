@@ -1,20 +1,31 @@
 <template>
   <div class="flex flex-column align-items-center py-6">
-    <div class="surface-card border-round-2xl p-6 border-1 surface-border text-center shadow-4" style="max-width:360px;width:100%">
+    <div
+      class="surface-card border-round-2xl p-6 border-1 surface-border text-center shadow-4"
+      style="max-width: 360px; width: 100%"
+    >
       <h2 class="mt-0 mb-4">My QR Code</h2>
 
       <div v-if="loading" class="flex justify-content-center py-6">
         <ProgressSpinner />
       </div>
       <div v-else-if="profile">
-        <canvas ref="qrCanvas" class="border-round-lg mb-4" style="display:block;margin:0 auto" />
+        <canvas
+          ref="qrCanvas"
+          class="border-round-lg mb-4"
+          style="display: block; margin: 0 auto"
+        />
 
         <div class="mb-4">
           <div class="font-bold text-xl">{{ profile.name }}</div>
-          <div class="text-color-secondary text-sm mt-1">Show this QR code to your teacher to mark attendance.</div>
+          <div class="text-color-secondary text-sm mt-1">
+            Show this QR code to your teacher to mark attendance.
+          </div>
         </div>
 
-        <div class="bg-surface-100 border-round-lg p-3 text-xs font-mono text-color-secondary mb-4 break-all">
+        <div
+          class="bg-surface-100 border-round-lg p-3 text-xs font-mono text-color-secondary mb-4 break-all"
+        >
           {{ profile.qr_token }}
         </div>
 
@@ -29,16 +40,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
-import QRCode from 'qrcode';
 import { useStudentStore } from '@/stores/student.store';
 import Button from 'primevue/button';
 import ProgressSpinner from 'primevue/progressspinner';
+import QRCode from 'qrcode';
+import { nextTick, onMounted, ref } from 'vue';
 
 const studentStore = useStudentStore();
-const profile  = ref(null);
+const profile = ref(null);
 const qrCanvas = ref(null);
-const loading  = ref(true);
+const loading = ref(true);
 
 onMounted(async () => {
   try {
@@ -59,7 +70,7 @@ onMounted(async () => {
 function downloadQR() {
   if (!qrCanvas.value) return;
   const link = document.createElement('a');
-  link.download = `qr-${profile.value?.name?.replace(/\s+/g,'-')}.png`;
+  link.download = `qr-${profile.value?.name?.replace(/\s+/g, '-')}.png`;
   link.href = qrCanvas.value.toDataURL();
   link.click();
 }

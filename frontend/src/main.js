@@ -1,11 +1,11 @@
-import { createApp } from 'vue';
+import Aura from '@primevue/themes/aura';
 import { createPinia } from 'pinia';
 import PrimeVue from 'primevue/config';
-import Aura from '@primevue/themes/aura';
-import ToastService from 'primevue/toastservice';
 import ConfirmationService from 'primevue/confirmationservice';
 import DialogService from 'primevue/dialogservice';
+import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
+import { createApp } from 'vue';
 
 import 'primeflex/primeflex.css';
 import 'primeicons/primeicons.css';

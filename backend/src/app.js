@@ -12,10 +12,12 @@ const app = express();
 // ── Security & Parsing ──────────────────────────────────────
 app.use(helmet());
 app.use(compression());
-app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    credentials: true,
+  }),
+);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -32,15 +34,16 @@ app.use('/api/', apiLimiter);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // ── Routes ──────────────────────────────────────────────────
-app.use('/api/auth',       require('./routes/auth.routes'));
+app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/institutes', require('./routes/institute.routes'));
-app.use('/api/batches',    require('./routes/batch.routes'));
-app.use('/api/students',   require('./routes/student.routes'));
+app.use('/api/batches', require('./routes/batch.routes'));
+app.use('/api/students', require('./routes/student.routes'));
 app.use('/api/attendance', require('./routes/attendance.routes'));
-app.use('/api/marks',      require('./routes/marks.routes'));
-app.use('/api/fees',       require('./routes/fees.routes'));
-app.use('/api/analytics',  require('./routes/analytics.routes'));
-app.use('/api/resources',  require('./routes/resource.routes'));
+app.use('/api/marks', require('./routes/marks.routes'));
+app.use('/api/fees', require('./routes/fees.routes'));
+app.use('/api/analytics', require('./routes/analytics.routes'));
+app.use('/api/resources', require('./routes/resource.routes'));
+app.use('/api/parent', require('./routes/parent.routes'));
 
 // ── Health Check ─────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date() }));

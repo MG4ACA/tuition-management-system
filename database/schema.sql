@@ -80,16 +80,23 @@ CREATE TABLE students (
     dob           DATE,
     gender        ENUM('male','female','other'),
     address       TEXT,
-    parent_name   VARCHAR(120),
-    parent_phone  VARCHAR(20),
-    parent_email  VARCHAR(180),
-    qr_token      CHAR(36) NOT NULL UNIQUE,   -- UUID for QR code
-    notes         TEXT,
-    is_active     TINYINT(1) NOT NULL DEFAULT 1,
-    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_stu_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    parent_name    VARCHAR(120),
+    parent_phone   VARCHAR(20),
+    parent_email   VARCHAR(180),
+    parent_user_id INT UNSIGNED,              -- set when parent portal account is created
+    qr_token       CHAR(36) NOT NULL UNIQUE,  -- UUID for QR code
+    notes          TEXT,
+    is_active      TINYINT(1) NOT NULL DEFAULT 1,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_stu_user        FOREIGN KEY (user_id)        REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_stu_parent_user FOREIGN KEY (parent_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- Run this if upgrading an existing installation:
+-- ALTER TABLE students
+--   ADD COLUMN parent_user_id INT UNSIGNED NULL AFTER parent_email,
+--   ADD CONSTRAINT fk_stu_parent_user FOREIGN KEY (parent_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 -- ------------------------------------------------------------
 -- 6. STUDENT ↔ BATCH ENROLLMENTS

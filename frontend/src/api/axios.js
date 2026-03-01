@@ -1,5 +1,5 @@
-import axios from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
+import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/api',
@@ -31,7 +31,7 @@ api.interceptors.response.use(
       auth.logout();
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

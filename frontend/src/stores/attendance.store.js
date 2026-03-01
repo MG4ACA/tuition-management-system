@@ -1,10 +1,10 @@
+import api from '@/api/axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import api from '@/api/axios';
 
 export const useAttendanceStore = defineStore('attendance', () => {
-  const records  = ref([]);
-  const loading  = ref(false);
+  const records = ref([]);
+  const loading = ref(false);
   const scanning = ref(false);
 
   async function scan(qr_token, batch_id) {
@@ -44,7 +44,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
   async function remove(id) {
     await api.delete(`/attendance/${id}`);
-    records.value = records.value.filter(r => r.id !== id);
+    records.value = records.value.filter((r) => r.id !== id);
   }
 
   // Student portal
@@ -53,5 +53,16 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return data.data;
   }
 
-  return { records, loading, scanning, scan, fetchAll, getSummary, create, update, remove, getMyAttendance };
+  return {
+    records,
+    loading,
+    scanning,
+    scan,
+    fetchAll,
+    getSummary,
+    create,
+    update,
+    remove,
+    getMyAttendance,
+  };
 });

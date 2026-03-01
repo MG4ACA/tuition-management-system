@@ -1,11 +1,10 @@
 <template>
   <div class="layout-wrapper">
-    <!-- Top Navbar -->
     <header class="topbar">
       <div class="flex align-items-center gap-2">
-        <i class="pi pi-graduation-cap text-primary text-xl" />
+        <i class="pi pi-users text-primary text-xl" />
         <span class="font-bold">TuitionMS</span>
-        <Tag value="Student" severity="success" class="ml-2" />
+        <Tag value="Parent" severity="info" class="ml-2" />
       </div>
       <nav class="flex gap-2">
         <RouterLink
@@ -48,12 +47,10 @@ import Tag from 'primevue/tag';
 const authStore = useAuthStore();
 
 const menuItems = [
-  { to: '/student', icon: 'pi-home', label: 'Dashboard' },
-  { to: '/student/qr', icon: 'pi-qrcode', label: 'My QR' },
-  { to: '/student/attendance', icon: 'pi-calendar', label: 'Attendance' },
-  { to: '/student/marks', icon: 'pi-chart-bar', label: 'Marks' },
-  { to: '/student/fees', icon: 'pi-wallet', label: 'Fees' },
-  { to: '/student/resources', icon: 'pi-folder', label: 'Resources' },
+  { to: '/parent', icon: 'pi-home', label: 'Overview' },
+  { to: '/parent/attendance', icon: 'pi-calendar', label: 'Attendance' },
+  { to: '/parent/marks', icon: 'pi-chart-bar', label: 'Marks' },
+  { to: '/parent/fees', icon: 'pi-wallet', label: 'Fees' },
 ];
 </script>
 
@@ -84,9 +81,9 @@ const menuItems = [
   display: flex;
   align-items: center;
   padding: 0.4rem 0.75rem;
-  border-radius: 8px;
-  color: var(--p-text-color);
+  border-radius: 6px;
   text-decoration: none;
+  color: var(--p-text-color);
   font-size: 0.875rem;
   transition: background 0.15s;
 }
@@ -94,18 +91,16 @@ const menuItems = [
   background: var(--p-surface-hover);
 }
 .nav-link.active {
-  background: var(--p-primary-color);
-  color: white;
-}
-.nav-link.active i {
-  color: white;
+  background: var(--p-primary-50);
+  color: var(--p-primary-color);
+  font-weight: 600;
 }
 
 .page-content {
-  flex: 1;
   padding: 1.5rem;
-  max-width: 1000px;
-  margin: 0 auto;
+  flex: 1;
+  max-width: 1200px;
   width: 100%;
+  margin: 0 auto;
 }
 </style>

@@ -1,19 +1,21 @@
+import api from '@/api/axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import api from '@/api/axios';
 
 export const useAnalyticsStore = defineStore('analytics', () => {
-  const overview    = ref(null);
-  const revenue     = ref([]);
-  const attendance  = ref([]);
-  const growth      = ref([]);
-  const feeStatus   = ref([]);
-  const loading     = ref(false);
+  const overview = ref(null);
+  const revenue = ref([]);
+  const attendance = ref([]);
+  const growth = ref([]);
+  const feeStatus = ref([]);
+  const loading = ref(false);
 
   async function fetchOverview(institute_id = null) {
     loading.value = true;
     try {
-      const { data } = await api.get('/analytics/overview', { params: institute_id ? { institute_id } : {} });
+      const { data } = await api.get('/analytics/overview', {
+        params: institute_id ? { institute_id } : {},
+      });
       overview.value = data.data;
     } finally {
       loading.value = false;
@@ -44,5 +46,17 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     return data.data;
   }
 
-  return { overview, revenue, attendance, growth, feeStatus, loading, fetchOverview, fetchRevenue, fetchAttendanceTrend, fetchStudentGrowth, fetchFeeStatus };
+  return {
+    overview,
+    revenue,
+    attendance,
+    growth,
+    feeStatus,
+    loading,
+    fetchOverview,
+    fetchRevenue,
+    fetchAttendanceTrend,
+    fetchStudentGrowth,
+    fetchFeeStatus,
+  };
 });

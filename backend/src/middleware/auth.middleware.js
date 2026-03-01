@@ -18,7 +18,7 @@ const authenticate = async (req, res, next) => {
     // Confirm user still exists and is active
     const [rows] = await pool.query(
       'SELECT id, name, email, role, is_active FROM users WHERE id = ?',
-      [payload.id]
+      [payload.id],
     );
 
     if (!rows.length || !rows[0].is_active) {

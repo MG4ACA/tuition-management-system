@@ -55,38 +55,43 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '@/stores/auth.store';
+import Button from 'primevue/button';
+import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
+import Password from 'primevue/password';
+import { useToast } from 'primevue/usetoast';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
-import { useAuthStore } from '@/stores/auth.store';
-import InputText from 'primevue/inputtext';
-import Password from 'primevue/password';
-import Button from 'primevue/button';
-import Message from 'primevue/message';
 
 const authStore = useAuthStore();
-const router    = useRouter();
-const toast     = useToast();
+const router = useRouter();
+const toast = useToast();
 
-const form     = ref({ email: '', password: '' });
-const errors   = ref({});
-const loading  = ref(false);
+const form = ref({ email: '', password: '' });
+const errors = ref({});
+const loading = ref(false);
 const errorMsg = ref('');
 
 function validate() {
   errors.value = {};
-  if (!form.value.email)    errors.value.email    = 'Email is required';
+  if (!form.value.email) errors.value.email = 'Email is required';
   if (!form.value.password) errors.value.password = 'Password is required';
   return !Object.keys(errors.value).length;
 }
 
 async function handleLogin() {
   if (!validate()) return;
-  loading.value  = true;
+  loading.value = true;
   errorMsg.value = '';
   try {
     const user = await authStore.login(form.value.email, form.value.password);
-    toast.add({ severity: 'success', summary: 'Welcome!', detail: `Hello, ${user.name}`, life: 3000 });
+    toast.add({
+      severity: 'success',
+      summary: 'Welcome!',
+      detail: `Hello, ${user.name}`,
+      life: 3000,
+    });
     router.push(user.role === 'teacher' ? '/' : '/student');
   } catch (err) {
     errorMsg.value = err.response?.data?.message || 'Login failed. Please try again.';
@@ -113,6 +118,6 @@ async function handleLogin() {
   border: 1px solid var(--p-surface-border);
   border-radius: 16px;
   padding: 2.5rem;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 </style>

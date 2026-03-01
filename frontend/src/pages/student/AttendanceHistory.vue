@@ -25,19 +25,35 @@
     </div>
 
     <div class="surface-card border-round-xl border-1 surface-border overflow-hidden">
-      <DataTable :value="records" :loading="loading" paginator :rows="20" striped-rows class="p-datatable-sm" sort-field="date" :sort-order="-1">
+      <DataTable
+        :value="records"
+        :loading="loading"
+        paginator
+        :rows="20"
+        striped-rows
+        class="p-datatable-sm"
+        sort-field="date"
+        :sort-order="-1"
+      >
         <Column field="date" header="Date" sortable>
           <template #body="{ data }">{{ data.date?.split('T')[0] }}</template>
         </Column>
-        <Column field="batch_name"     header="Batch"     sortable />
+        <Column field="batch_name" header="Batch" sortable />
         <Column field="institute_name" header="Institute" sortable />
-        <Column field="status"         header="Status">
+        <Column field="status" header="Status">
           <template #body="{ data }">
-            <Tag :value="data.status" :severity="data.status==='present'?'success':data.status==='late'?'warn':'danger'" />
+            <Tag
+              :value="data.status"
+              :severity="
+                data.status === 'present' ? 'success' : data.status === 'late' ? 'warn' : 'danger'
+              "
+            />
           </template>
         </Column>
         <Column field="scanned_at" header="Scanned At">
-          <template #body="{ data }">{{ data.scanned_at ? new Date(data.scanned_at).toLocaleTimeString() : '—' }}</template>
+          <template #body="{ data }">
+            {{ data.scanned_at ? new Date(data.scanned_at).toLocaleTimeString() : '—' }}
+          </template>
         </Column>
       </DataTable>
     </div>
@@ -45,20 +61,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
 import { useAttendanceStore } from '@/stores/attendance.store';
-import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
 import Tag from 'primevue/tag';
+import { computed, onMounted, ref } from 'vue';
 
 const attendanceStore = useAttendanceStore();
 const records = ref([]);
 const loading = ref(true);
 
 const counts = computed(() => ({
-  present: records.value.filter(r => r.status === 'present').length,
-  late:    records.value.filter(r => r.status === 'late').length,
-  absent:  records.value.filter(r => r.status === 'absent').length,
+  present: records.value.filter((r) => r.status === 'present').length,
+  late: records.value.filter((r) => r.status === 'late').length,
+  absent: records.value.filter((r) => r.status === 'absent').length,
 }));
 
 onMounted(async () => {

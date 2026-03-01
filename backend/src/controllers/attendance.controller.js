@@ -6,7 +6,10 @@ exports.scan = async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
 
   // Lookup student
-  const [stuRows] = await pool.query('SELECT id, name FROM students WHERE qr_token=? AND is_active=1', [qr_token]);
+  const [stuRows] = await pool.query(
+    'SELECT id, name FROM students WHERE qr_token=? AND is_active=1',
+    [qr_token],
+  );
   if (!stuRows.length) return res.status(404).json({ success: false, message: 'Invalid QR code' });
 
   const student = stuRows[0];
@@ -14,7 +17,7 @@ exports.scan = async (req, res) => {
   // Verify enrollment
   const [enrollment] = await pool.query(
     'SELECT id FROM student_batches WHERE student_id=? AND batch_id=? AND is_active=1',
-    [student.id, batch_id]
+    [student.id, batch_id],
   );
   if (!enrollment.length) {
     return res.status(400).json({ success: false, message: 'Student not enrolled in this batch' });
@@ -25,14 +28,14 @@ exports.scan = async (req, res) => {
     `INSERT INTO attendance (student_id, batch_id, date, status, scanned_at)
      VALUES (?,?,?,'present', NOW())
      ON DUPLICATE KEY UPDATE status='present', scanned_at=NOW()`,
-    [student.id, batch_id, today]
+    [student.id, batch_id, today],
   );
 
   // Fee check
-  const monthStart = `${today.slice(0,7)}-01`;
+  const monthStart = `${today.slice(0, 7)}-01`;
   const [feeRows] = await pool.query(
     'SELECT status FROM fee_records WHERE student_id=? AND batch_id=? AND month=?',
-    [student.id, batch_id, monthStart]
+    [student.id, batch_id, monthStart],
   );
 
   res.json({
@@ -62,11 +65,26 @@ exports.getAll = async (req, res) => {
   `;
   const params = [req.user.id];
 
-  if (batch_id)   { sql += ' AND a.batch_id=?';    params.push(batch_id); }
-  if (date)       { sql += ' AND a.date=?';         params.push(date); }
-  if (student_id) { sql += ' AND a.student_id=?';   params.push(student_id); }
-  if (from)       { sql += ' AND a.date >= ?';       params.push(from); }
-  if (to)         { sql += ' AND a.date <= ?';       params.push(to); }
+  if (batch_id) {
+    sql += ' AND a.batch_id=?';
+    params.push(batch_id);
+  }
+  if (date) {
+    sql += ' AND a.date=?';
+    params.push(date);
+  }
+  if (student_id) {
+    sql += ' AND a.student_id=?';
+    params.push(student_id);
+  }
+  if (from) {
+    sql += ' AND a.date >= ?';
+    params.push(from);
+  }
+  if (to) {
+    sql += ' AND a.date <= ?';
+    params.push(to);
+  }
 
   sql += ' ORDER BY a.date DESC, s.name';
   const [rows] = await pool.query(sql, params);
@@ -81,7 +99,7 @@ exports.create = async (req, res) => {
     `INSERT INTO attendance (student_id, batch_id, date, status, notes)
      VALUES (?,?,?,?,?)
      ON DUPLICATE KEY UPDATE status=VALUES(status), notes=VALUES(notes)`,
-    [student_id, batch_id, date, status, notes]
+    [student_id, batch_id, date, status, notes],
   );
   res.status(201).json({ success: true, message: 'Attendance recorded' });
 };
@@ -89,7 +107,11 @@ exports.create = async (req, res) => {
 // PUT /api/attendance/:id
 exports.update = async (req, res) => {
   const { status, notes } = req.body;
-  await pool.query('UPDATE attendance SET status=?, notes=? WHERE id=?', [status, notes, req.params.id]);
+  await pool.query('UPDATE attendance SET status=?, notes=? WHERE id=?', [
+    status,
+    notes,
+    req.params.id,
+  ]);
   res.json({ success: true, message: 'Updated' });
 };
 
@@ -119,9 +141,18 @@ exports.summary = async (req, res) => {
   `;
   const params = [req.user.id];
 
-  if (batch_id)   { sql += ' AND a.batch_id=?';    params.push(batch_id); }
-  if (student_id) { sql += ' AND a.student_id=?';  params.push(student_id); }
-  if (month)      { sql += ' AND DATE_FORMAT(a.date,"%Y-%m")=?'; params.push(month); }
+  if (batch_id) {
+    sql += ' AND a.batch_id=?';
+    params.push(batch_id);
+  }
+  if (student_id) {
+    sql += ' AND a.student_id=?';
+    params.push(student_id);
+  }
+  if (month) {
+    sql += ' AND DATE_FORMAT(a.date,"%Y-%m")=?';
+    params.push(month);
+  }
 
   sql += ' GROUP BY s.id, s.name ORDER BY s.name';
   const [rows] = await pool.query(sql, params);
@@ -131,7 +162,8 @@ exports.summary = async (req, res) => {
 // GET /api/attendance/student-me  (student portal)
 exports.getMyAttendance = async (req, res) => {
   const [stuRows] = await pool.query('SELECT id FROM students WHERE user_id=?', [req.user.id]);
-  if (!stuRows.length) return res.status(404).json({ success: false, message: 'Student profile not found' });
+  if (!stuRows.length)
+    return res.status(404).json({ success: false, message: 'Student profile not found' });
 
   const [rows] = await pool.query(
     `SELECT a.*, b.name AS batch_name, i.name AS institute_name
@@ -139,7 +171,7 @@ exports.getMyAttendance = async (req, res) => {
      JOIN batches b ON b.id=a.batch_id
      JOIN institutes i ON i.id=b.institute_id
      WHERE a.student_id=? ORDER BY a.date DESC LIMIT 100`,
-    [stuRows[0].id]
+    [stuRows[0].id],
   );
   res.json({ success: true, data: rows });
 };
