@@ -1,6 +1,6 @@
 <template>
   <div class="layout-wrapper" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-    <!-- Sidebar -->
+    <!-- Sidebar (desktop/tablet only) -->
     <nav class="sidebar" :class="{ collapsed: sidebarCollapsed }">
       <div class="sidebar-header">
         <div v-if="!sidebarCollapsed" class="brand">
@@ -61,17 +61,61 @@
 
     <!-- Main Content -->
     <main class="main-content">
-      <div class="topbar">
+      <!-- Desktop topbar -->
+      <div class="topbar desktop-topbar">
         <div class="text-xl font-semibold">{{ currentPageTitle }}</div>
         <div class="flex align-items-center gap-2">
           <Tag v-if="selectedInstitute" :value="selectedInstituteName" severity="info" />
           <Avatar :label="authStore.user?.name?.[0]" shape="circle" />
         </div>
       </div>
+
+      <!-- Mobile topbar -->
+      <div class="topbar mobile-topbar">
+        <div class="mobile-topbar-left">
+          <i class="pi pi-graduation-cap text-primary" style="font-size: 1.2rem; flex-shrink: 0" />
+          <span class="font-semibold text-base mobile-title">{{ currentPageTitle }}</span>
+        </div>
+        <div class="mobile-topbar-right">
+          <Select
+            v-model="selectedInstitute"
+            :options="[{ id: null, name: 'All' }, ...instituteStore.institutes]"
+            option-label="name"
+            option-value="id"
+            placeholder="All"
+            class="mobile-institute-select"
+            @change="instituteStore.setSelected(selectedInstitute)"
+          />
+          <Avatar :label="authStore.user?.name?.[0]" shape="circle" size="small" />
+          <Button
+            icon="pi pi-sign-out"
+            text
+            rounded
+            size="small"
+            v-tooltip="'Logout'"
+            @click="handleLogout"
+          />
+        </div>
+      </div>
+
       <div class="page-content">
         <RouterView />
       </div>
     </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+      <RouterLink
+        v-for="item in menuItems"
+        :key="item.to"
+        :to="item.to"
+        class="bottom-nav-item"
+        active-class="active"
+      >
+        <i :class="['pi', item.icon]" />
+        <span>{{ item.label }}</span>
+      </RouterLink>
+    </nav>
   </div>
 </template>
 
@@ -120,6 +164,9 @@ async function handleLogout() {
 </script>
 
 <style scoped>
+/* ──────────────────────────────────────────────
+   Base layout (desktop)
+────────────────────────────────────────────── */
 .layout-wrapper {
   display: flex;
   height: 100vh;
@@ -236,5 +283,157 @@ async function handleLogout() {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
+}
+
+/* Topbar variants */
+.mobile-topbar {
+  display: none;
+}
+.desktop-topbar {
+  display: flex;
+}
+
+/* Mobile bottom nav (hidden on desktop) */
+.mobile-bottom-nav {
+  display: none;
+}
+
+/* ──────────────────────────────────────────────
+   Mobile  (< 768px)
+────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .layout-wrapper {
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Hide sidebar completely on mobile */
+  .sidebar {
+    display: none;
+  }
+
+  .main-content {
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  /* Switch topbars */
+  .desktop-topbar {
+    display: none;
+  }
+  .mobile-topbar {
+    display: flex;
+    height: 56px;
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .mobile-institute-select {
+    max-width: 110px;
+    font-size: 0.75rem;
+  }
+
+  .page-content {
+    padding: 0.75rem;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom) + 0.75rem);
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .mobile-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .mobile-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  /* Show bottom nav */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 500;
+    height: 64px;
+    background: color-mix(in srgb, var(--p-surface-card) 78%, transparent);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid color-mix(in srgb, var(--p-surface-border) 50%, transparent);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--p-text-color-secondary);
+    font-size: 0.58rem;
+    font-weight: 500;
+    padding: 0.25rem 0;
+    position: relative;
+    transition: color 0.2s;
+    border-top: none;
+  }
+
+  .bottom-nav-item::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 52px;
+    height: 30px;
+    border-radius: 15px;
+    background: transparent;
+    transition: background 0.2s;
+  }
+
+  .bottom-nav-item i {
+    font-size: 1.15rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .bottom-nav-item span {
+    position: relative;
+    z-index: 1;
+  }
+
+  .bottom-nav-item:hover {
+    color: var(--p-primary-color);
+  }
+
+  .bottom-nav-item.active {
+    color: var(--p-primary-color);
+  }
+
+  .bottom-nav-item.active::before {
+    background: color-mix(in srgb, var(--p-primary-color) 15%, transparent);
+  }
 }
 </style>

@@ -1,8 +1,8 @@
 # 🚀 Hostinger VPS Deployment Guide
 
-## Pharmacy POS System (MEVN Stack)
+## Tuition Management System (Vue 3 + Express.js + MySQL)
 
-This guide will walk you through deploying your Pharmacy POS application (Vue.js frontend + Express.js backend) on a Hostinger VPS with the MEVN stack template.
+This guide walks you through deploying the Tuition Management System (Vue 3 frontend + Express.js backend) on a Hostinger VPS with Ubuntu 22.04.
 
 ---
 
@@ -12,6 +12,7 @@ This guide will walk you through deploying your Pharmacy POS application (Vue.js
 - SSH access to your VPS
 - Your VPS IP address
 - Domain name (optional, but recommended)
+- Node.js 20 LTS on the server
 
 ---
 
@@ -21,35 +22,37 @@ This guide will walk you through deploying your Pharmacy POS application (Vue.js
 ┌─────────────────────────────────────────┐
 │         Hostinger VPS Server            │
 │                                         │
-│  ┌────────────────────────────────┐    │
-│  │  Nginx (Reverse Proxy)         │    │
-│  │  Port 80/443                   │    │
-│  └──────────┬─────────────────────┘    │
-│             │                           │
-│  ┌──────────▼──────────┐  ┌──────────┐ │
-│  │  Vue.js Frontend    │  │  Backend │ │
-│  │  (Static Files)     │  │  API     │ │
-│  │                     │  │  Port    │ │
-│  │                     │  │  3000    │ │
-│  └─────────────────────┘  └────┬─────┘ │
-│                                 │       │
-│                          ┌──────▼─────┐ │
-│                          │   MySQL    │ │
-│                          │  Database  │ │
-│                          └────────────┘ │
+│  ┌────────────────────────────────┐     │
+│  │  Nginx (Reverse Proxy)         │     │
+│  │  Port 80 / 443                 │     │
+│  └──────────┬─────────────────────┘     │
+│             │                            │
+│  ┌──────────▼──────────┐  ┌───────────┐ │
+│  │  Vue 3 Frontend     │  │  Express  │ │
+│  │  (Static Files)     │  │  API      │ │
+│  │  /var/www/tms/      │  │  Port     │ │
+│  │  public/            │  │  3003     │ │
+│  └─────────────────────┘  └─────┬─────┘ │
+│                                  │       │
+│                           ┌──────▼─────┐ │
+│                           │   MySQL    │ │
+│                           │ tuition_ms │ │
+│                           └────────────┘ │
 └─────────────────────────────────────────┘
 ```
+
+**Nginx routing:**
+
+- `/*` → Vue 3 static files (SPA with `try_files`)
+- `/api/*` → proxy → Express on port 3003
+- `/uploads/*` → proxy → Express on port 3003 (served as static by Express)
 
 ---
 
 ## 📦 Step 1: Connect to Your VPS
 
 ```bash
-# Connect via SSH
 ssh root@your_vps_ip
-
-# Or if you have a username
-ssh username@your_vps_ip
 ```
 
 ---
@@ -65,30 +68,34 @@ sudo apt update && sudo apt upgrade -y
 ### 2.2 Install Required Tools
 
 ```bash
-# Install Git
+# Git
 sudo apt install git -y
 
-# Install PM2 (Process Manager)
+# Node.js 20 LTS (if not already installed)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# PM2
 sudo npm install -g pm2
 
-# Install Nginx (if not already installed)
+# Nginx
 sudo apt install nginx -y
 
-# Install MySQL client (if needed)
+# MySQL
 sudo apt install mysql-server -y
-sudo apt install mysql-client -y
-sudo systemctl status mysql
 sudo systemctl start mysql
+sudo systemctl enable mysql
+sudo systemctl status mysql
 ```
 
 ### 2.3 Configure Firewall
 
 ```bash
-# Allow SSH, HTTP, and HTTPS
 sudo ufw allow 22
 sudo ufw allow 80
 sudo ufw allow 443
 sudo ufw enable
+sudo ufw status
 ```
 
 ---
@@ -111,540 +118,491 @@ Follow the prompts to:
 ### 3.2 Create Database and User
 
 ```bash
-# Login to MySQL
 sudo mysql -u root -p
-
-# Run these SQL commands:
 ```
 
 ```sql
 -- Create database
-CREATE DATABASE hasal_products;
+CREATE DATABASE tuition_ms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Create user (replace 'your_password' with a strong password)
-CREATE USER 'hasal_products'@'localhost' IDENTIFIED BY 'Velou@123';  pw - Velou@123
+-- Create dedicated user (replace 'StrongPassword123!' with your own)
+CREATE USER 'tms_user'@'localhost' IDENTIFIED BY 'StrongPassword123!';
 
 -- Grant privileges
-GRANT ALL PRIVILEGES ON hasal_products.* TO 'hasal_products'@'localhost';
-
--- Flush privileges
+GRANT ALL PRIVILEGES ON tuition_ms.* TO 'tms_user'@'localhost';
 FLUSH PRIVILEGES;
-
--- Exit MySQL
 EXIT;
 ```
 
 ---
 
-## 📥 Step 4: Deploy Your Application
+## 📥 Step 4: Deploy the Application
 
 ### 4.1 Create Application Directory
 
 ```bash
-# Create directory for your app
-sudo mkdir -p /var/www/hasal_products
-cd /var/www/hasal_products
+sudo mkdir -p /var/www/tms
+cd /var/www/tms
 ```
 
-### 4.2 Clone Your Repository
+### 4.2 Clone the Repository
 
 ```bash
-# If your code is on GitHub
-sudo git clone https://github.com/MG4ACA/hasal-products-backend.git
+# Clone the monorepo (frontend + backend in one repo)
+sudo git clone https://github.com/YOUR_USERNAME/tution-management-system.git .
 
-# Or upload your code using SCP from your local machine:
-# scp -r /path/to/pharmacy-standalone-pos root@your_vps_ip:/var/www/hasal_products
+# Set correct ownership
+sudo chown -R $USER:$USER /var/www/tms
+sudo chmod -R 755 /var/www/tms
 ```
 
-### 4.3 Set Correct Permissions
+### 4.3 Pull Latest Changes (for updates)
 
 ```bash
-# Change ownership
-sudo chown -R $USER:$USER /var/www/hasal_products
+cd /var/www/tms
+git fetch --all
+git pull origin main
 
-# Set permissions
-sudo chmod -R 755 /var/www/hasal_products
+# If merge conflicts occur:
+git reset --hard origin/main
 ```
 
 ---
 
-cd hasal-products-backend
-
-git fetch --all
-git branch
-git checkout 'your_branch'
-git pull origin dev
-
-if errors occur try below
-git reset --hard
-
-## 🔨 Step 5: Set Up Backend
-
-### 5.1 Navigate to Backend Directory
+## 🗃️ Step 5: Import Database Schema
 
 ```bash
-cd /var/www/hasal_products/hasal-products-backend
+cd /var/www/tms
+
+# Import schema (creates all tables + seeds default teacher account)
+mysql -u tms_user -p tuition_ms < database/schema.sql
 ```
 
-### 5.2 Install Dependencies
+This creates all 10 tables and seeds the default teacher account:
+
+- **Email:** `teacher@tuition.local`
+- **Password:** `Admin@1234`
+
+> ⚠️ Change this password immediately after first login.
+
+---
+
+## 🔨 Step 6: Set Up Backend
+
+### 6.1 Install Dependencies
 
 ```bash
+cd /var/www/tms/backend
 npm install --production
 ```
 
-### 5.3 Configure Environment Variables
+### 6.2 Create Environment File
 
 ```bash
-# Create .env file
-nano .env
+nano /var/www/tms/backend/.env
 ```
-
-Add the following configuration:
 
 ```env
-# Database Configuration
+# ── Server ────────────────────────────────────────────────────
+PORT=3003
+NODE_ENV=production
+
+# ── Database ─────────────────────────────────────────────────
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=hasal_products
-DB_USER=hasal_products
-DB_PASSWORD=Velou@123
+DB_USER=tms_user
+DB_PASSWORD=StrongPassword123!
+DB_NAME=tuition_ms
 
-# Application
-NODE_ENV=production
-PORT=5000
-HOST=0.0.0.0
+# ── JWT ──────────────────────────────────────────────────────
+# Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+JWT_ACCESS_SECRET=replace_with_64_char_random_hex_for_access
+JWT_REFRESH_SECRET=replace_with_different_64_char_random_hex_for_refresh
+JWT_ACCESS_EXPIRES=15m
+JWT_REFRESH_EXPIRES=7d
 
-# JWT Secret (generate a secure random string)
-JWT_SECRET=your_super_secret_jwt_key_here_change_this
+# ── CORS ─────────────────────────────────────────────────────
+# Set to your domain (no trailing slash)
+CLIENT_ORIGIN=https://your-domain.com
 
-# JWT Expiration
-JWT_EXPIRES_IN=24h
-
-# CORS Configuration (comma-separated list of allowed origins)
-ALLOWED_ORIGINS=http://hasal-products.lumicore-labs.com/,https://hasal-products.lumicore-labs.com/
+# ── File Uploads ─────────────────────────────────────────────
+UPLOAD_DIR=uploads
+MAX_FILE_SIZE_MB=10
 ```
 
-**To generate a secure JWT secret:**
+**Generate secure JWT secrets:**
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+# Run twice — use first output for JWT_ACCESS_SECRET, second for JWT_REFRESH_SECRET
 ```
 
-### 5.4 Initialize Database
+### 6.3 Create Uploads Directory
 
 ```bash
-# Create database tables and seed
-npm run db:init
-
-
-# If you have product CSV data
-npm run db:seed
+mkdir -p /var/www/tms/backend/uploads
+chmod 755 /var/www/tms/backend/uploads
 ```
 
-### 5.5 Test Backend Locally
+### 6.4 Test Backend
 
 ```bash
-# Test if backend works
-npm start
-
-# In another terminal, test the API
-curl http://localhost:5000/api/health
+cd /var/www/tms/backend
+node src/app.js
 ```
 
-If successful, you should see a response. Press `Ctrl+C` to stop.
+Expected output:
 
-### 5.6 Set Up PM2 for Backend
+```
+🚀 API running on http://localhost:3003
+✅ MySQL connected
+```
+
+Test the API in another terminal:
+
+```bash
+curl http://localhost:3003/health
+```
+
+Press `Ctrl+C` to stop.
+
+### 6.5 Set Up PM2
 
 ```bash
 # Start backend with PM2
-pm2 start server.js --name hasal-products-backend
+pm2 start /var/www/tms/backend/src/app.js --name tms-api
 
-# Save PM2 configuration
+# Save configuration
 pm2 save
 
-# Set PM2 to start on boot
+# Enable PM2 on boot
 pm2 startup
+# Run the command it outputs (starts with: sudo env PATH=...)
 
-# Check status
+# Verify
 pm2 status
 ```
 
 **Useful PM2 Commands:**
 
 ```bash
-# View logs
-pm2 logs hasal-products-backend
-
-# Restart app
-pm2 restart hasal-products-backend
-
-# Stop app
-pm2 stop hasal-products-backend
-
-# Monitor
-pm2 monit
+pm2 logs tms-api           # View live logs
+pm2 restart tms-api        # Restart after code changes
+pm2 stop tms-api           # Stop
+pm2 monit                  # Resource monitor
 ```
 
 ---
 
-## 🎨 Step 6: Set Up Frontend
+## 🎨 Step 7: Build and Deploy Frontend
 
-### 6.1 Navigate to Frontend Directory
-
-## clone frotend repo then
+### 7.1 Configure Production API URL
 
 ```bash
-cd /var/www/hasal_products/hasal_products-frontend
-```
-
-### 6.2 Configure API Endpoint
-
-create environment file:
-
-```bash
-nano .env.production
+nano /var/www/tms/frontend/.env.production
 ```
 
 ```env
-VITE_API_BASE_URL=http://hasal-products.lumicore-labs.com/api
+VITE_API_BASE_URL=https://your-domain.com/api
 ```
 
-or Update the frontend to point to your backend API:
+> If you don't have a domain yet, use your VPS IP:
+> `VITE_API_BASE_URL=http://your_vps_ip/api`
+
+### 7.2 Install Dependencies and Build
 
 ```bash
-nano src/api/client.js
-```
-
-Update the base URL:
-
-```javascript
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://hasal-products.lumicore-labs.com/api';
-```
-
-### 6.3 Install Dependencies and Build
-
-```bash
-# Install dependencies
+cd /var/www/tms/frontend
 npm install
-
-# Build for production
 npm run build
 ```
 
-This creates a `dist` folder with optimized static files.
+This creates `frontend/dist/` with optimized static files.
 
-### 6.4 Move Build to Nginx Directory
+### 7.3 Deploy Built Files to Nginx Directory
 
 ```bash
-# Create directory for frontend
-sudo mkdir -p /var/www/hasal_products/frontend
+# Create nginx serving directory
+sudo mkdir -p /var/www/tms/public
 
 # Copy built files
-sudo cp -r dist/* /var/www/hasal_products/frontend/
+sudo cp -r /var/www/tms/frontend/dist/* /var/www/tms/public/
 
-# Set permissions
-sudo chown -R www-data:www-data /var/www/hasal_products/frontend
-sudo chmod -R 755 /var/www/hasal_products/frontend
+# Set correct ownership for nginx
+sudo chown -R www-data:www-data /var/www/tms/public
+sudo chmod -R 755 /var/www/tms/public
 ```
 
 ---
 
-## 🌐 Step 7: Configure Nginx
+## 🌐 Step 8: Configure Nginx
 
-### 7.1 Create Nginx Configuration
+### 8.1 Create Nginx Configuration
 
 ```bash
-sudo nano /etc/nginx/sites-available/hasal_products
+sudo nano /etc/nginx/sites-available/tms
 ```
 
-Add this configuration:
-
 ```nginx
-# Upstream backend
-upstream hasal_products_backend {
-    server localhost:4000;
+upstream tms_backend {
+    server localhost:3003;
     keepalive 64;
 }
 
 server {
     listen 80;
- server_name hasal-products.lumicore-labs.com www.hasal-products.lumicore-labs.com;
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
+    server_name your-domain.com www.your-domain.com;
+    # For IP-only (no domain): server_name your_vps_ip;
 
-    # Frontend - Serve Vue.js app
+    # Security headers
+    add_header X-Frame-Options     "SAMEORIGIN"   always;
+    add_header X-Content-Type-Options "nosniff"   always;
+    add_header X-XSS-Protection   "1; mode=block" always;
+
+    # ── Frontend (Vue 3 SPA) ─────────────────────────────────
     location / {
-        root /var/www/hasal_products/frontend;
+        root  /var/www/tms/public;
         index index.html;
         try_files $uri $uri/ /index.html;
 
-        # Cache static assets
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        # Cache static assets aggressively
+        location ~* \.(js|css|woff2?|ttf|eot|svg|png|jpg|ico)$ {
             expires 1y;
             add_header Cache-Control "public, immutable";
         }
     }
 
-    # Backend API - Proxy to Express.js
+    # ── Backend API ──────────────────────────────────────────
     location /api/ {
-        proxy_pass http://hasal_products_backend/api/;
+        proxy_pass         http://tms_backend/api/;
         proxy_http_version 1.1;
 
-        # Headers
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        'upgrade';
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Timeouts
         proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
+        proxy_send_timeout    60s;
+        proxy_read_timeout    60s;
+        proxy_cache_bypass    $http_upgrade;
 
-        # Disable cache for API
-        proxy_cache_bypass $http_upgrade;
+        # Upload size limit (match MAX_FILE_SIZE_MB)
+        client_max_body_size 10M;
     }
 
-    # Health check endpoint
+    # ── Uploaded files (resources/attachments) ───────────────
+    location /uploads/ {
+        proxy_pass       http://tms_backend/uploads/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        add_header Cache-Control "public, max-age=2592000";
+    }
+
+    # ── Health check ─────────────────────────────────────────
     location /health {
-        proxy_pass http://hasal_products_backend/health;
+        proxy_pass http://tms_backend/health;
         access_log off;
     }
 
-    # Logs
-    access_log /var/log/nginx/hasal_products-access.log;
-    error_log /var/log/nginx/hasal_products-error.log;
+    # ── Logs ─────────────────────────────────────────────────
+    access_log /var/log/nginx/tms-access.log;
+    error_log  /var/log/nginx/tms-error.log;
 }
 ```
 
-### 7.2 Enable Site
+### 8.2 Enable Site
 
 ```bash
-# Create symbolic link
-sudo ln -s /etc/nginx/sites-available/hasal_products /etc/nginx/sites-enabled/
+# Enable site
+sudo ln -s /etc/nginx/sites-available/tms /etc/nginx/sites-enabled/
 
 # Remove default site (optional)
-sudo rm /etc/nginx/sites-enabled/default
+sudo rm -f /etc/nginx/sites-enabled/default
 
-# Test Nginx configuration
+# Test configuration
 sudo nginx -t
 
-# Restart Nginx
-sudo systemctl restart nginx
-
-# Enable Nginx on boot
+# Reload Nginx
+sudo systemctl reload nginx
 sudo systemctl enable nginx
 ```
 
 ---
 
-## 🔒 Step 8: Set Up SSL (Optional but Recommended)
-### 8.1 Install Certbot
+## 🔒 Step 9: Set Up SSL (Recommended)
+
+### 9.1 Install Certbot
 
 ```bash
 sudo apt install certbot python3-certbot-nginx -y
 ```
 
-### 8.2 Obtain SSL Certificate
-
-**Note:** You need a domain name pointed to your VPS IP for this step.
+### 9.2 Obtain SSL Certificate
 
 ```bash
-# Replace with your domain
-sudo certbot --nginx -d hasal-products.lumicore-labs.com -d www.hasal-products.lumicore-labs.com
+# Replace with your actual domain
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
 ```
 
-Certbot will:
+Certbot automatically configures Nginx for HTTPS and sets up auto-renewal.
 
-- Obtain certificate
-- Automatically configure Nginx
-- Set up automatic renewal
-
-### 8.3 Test Auto-Renewal
+### 9.3 Test Auto-Renewal
 
 ```bash
 sudo certbot renew --dry-run
 ```
 
-### 8.4 Update Frontend API URL
+### 9.4 Update CORS After SSL
 
-After SSL is set up, update your frontend API URL to use HTTPS:
-
-```bash
-nano /var/www/hasal_products/src/api/client.js
-```
-
-Change to:
-
-```javascript
-const API_BASE_URL = 'https://lumicore.trustyou-go.com/api';
-```
-
-Rebuild and redeploy:
+After SSL is active, update `CLIENT_ORIGIN` in `.env` to use `https://`:
 
 ```bash
-cd /var/www/hasal_products
-npm run build
-sudo cp -r dist/* /var/www/hasal_products/frontend/
+nano /var/www/tms/backend/.env
+# Change: CLIENT_ORIGIN=https://your-domain.com
+
+pm2 restart tms-api
 ```
 
 ---
 
-## ✅ Step 9: Verify Deployment
+## ✅ Step 10: Verify Deployment
 
-### 9.1 Check Backend
-
-```bash
-# Check PM2 status
-pm2 status
-
-# Check backend logs
-pm2 logs hasal_products-backend
-
-# Test API directly
-curl http://localhost:3000/api/health
-```
-
-### 9.2 Check Nginx
+### 10.1 Check All Services
 
 ```bash
-# Check Nginx status
-sudo systemctl status nginx
-
-# Check Nginx logs
-sudo tail -f /var/log/nginx/hasal_products-error.log
+pm2 status                         # Should show tms-api as 'online'
+sudo systemctl status nginx        # Should be 'active (running)'
+sudo systemctl status mysql        # Should be 'active (running)'
 ```
 
-### 9.3 Test Application
+### 10.2 Test API
 
-Open your browser and visit:
+```bash
+curl http://localhost:3003/health
+# Expected: {"status":"ok","ts":"..."}
 
-- `http://your_vps_ip` (or `https://yourdomain.com`)
+curl http://localhost:3003/api/auth/me
+# Expected: 401 (correct — route requires auth)
+```
 
-You should see your Pharmacy POS login page!
+### 10.3 Test Application
+
+Open your browser:
+
+- `http://your_vps_ip` (or `https://your-domain.com`)
+- Login with `teacher@tuition.local` / `Admin@1234`
 
 ---
 
-## 🔄 Step 10: Deployment Script (For Updates)
-
-Create a deployment script for easy updates:
+## 🔄 Step 11: Update/Redeploy Script
 
 ```bash
-nano /var/www/hasal_products/deploy.sh
+nano /var/www/tms/deploy.sh
 ```
 
 ```bash
 #!/bin/bash
+set -e
 
-echo "🚀 Starting deployment..."
+echo "🚀 Starting TMS deployment..."
+cd /var/www/tms
 
-# Navigate to project directory
-cd /var/www/hasal_products
-
-# Pull latest changes (if using Git)
+# Pull latest code
 echo "📥 Pulling latest changes..."
+git fetch --all
 git pull origin main
 
-# Backend deployment
-echo "🔨 Deploying backend..."
-cd backend-project
+# Backend
+echo "🔨 Updating backend..."
+cd /var/www/tms/backend
 npm install --production
-pm2 restart hasal_products-backend
+pm2 restart tms-api
 
-# Frontend deployment
-echo "🎨 Deploying frontend..."
-cd ..
+# Frontend
+echo "🎨 Building frontend..."
+cd /var/www/tms/frontend
 npm install
 npm run build
-sudo cp -r dist/* /var/www/hasal_products/frontend/
+sudo cp -r dist/* /var/www/tms/public/
+sudo chown -R www-data:www-data /var/www/tms/public
 
-# Restart Nginx
-echo "🌐 Restarting Nginx..."
-sudo systemctl restart nginx
+# Reload Nginx
+echo "🌐 Reloading Nginx..."
+sudo systemctl reload nginx
 
 echo "✅ Deployment complete!"
+pm2 status
 ```
 
-Make it executable:
-
 ```bash
-chmod +x /var/www/hasal_products/deploy.sh
+chmod +x /var/www/tms/deploy.sh
 ```
 
-Run deployment:
+Run future updates with:
 
 ```bash
-./deploy.sh
+cd /var/www/tms && ./deploy.sh
 ```
 
 ---
 
 ## 🛠️ Maintenance Commands
 
-### Check Application Status
+### Check Status
 
 ```bash
-# Check all services
 pm2 status
 sudo systemctl status nginx
 sudo systemctl status mysql
-
-# Check disk space
-df -h
-
-# Check memory usage
-free -m
+df -h          # Disk space
+free -m        # Memory usage
 ```
 
 ### View Logs
 
 ```bash
-# Backend logs
-pm2 logs hasal_products-backend
-
-# Nginx access logs
-sudo tail -f /var/log/nginx/hasal_products-access.log
-
-# Nginx error logs
-sudo tail -f /var/log/nginx/hasal_products-error.log
-
-# MySQL logs
-sudo tail -f /var/log/mysql/error.log
+pm2 logs tms-api                             # Backend live logs
+sudo tail -f /var/log/nginx/tms-access.log   # Nginx access
+sudo tail -f /var/log/nginx/tms-error.log    # Nginx errors
+sudo tail -f /var/log/mysql/error.log        # MySQL errors
 ```
 
-### Backup Database
+## 💾 Backup Database
+
+### Manual Backup
 
 ```bash
-# Create backup directory
 mkdir -p ~/backups
+mysqldump -u tms_user -p tuition_ms > ~/backups/tuition_ms_$(date +%Y%m%d_%H%M%S).sql
+```
 
-# Backup database
-mysqldump -u ape_news_user -p ape_news > ~/backups/ape_news_$(date +%Y%m%d_%H%M%S).sql
+### Automated Daily Backup
 
-# Create automated backup script
-nano ~/backup-db.sh
+```bash
+nano ~/backup-tms-db.sh
 ```
 
 ```bash
 #!/bin/bash
 BACKUP_DIR=~/backups
 mkdir -p $BACKUP_DIR
-mysqldump -u ape_news_user -p'your_password' ape_news > $BACKUP_DIR/ape_news_$(date +%Y%m%d_%H%M%S).sql
 
-# Keep only last 7 days of backups
-find $BACKUP_DIR -name "ape_news_*.sql" -mtime +7 -delete
+mysqldump -u tms_user -p'StrongPassword123!' tuition_ms \
+  > $BACKUP_DIR/tuition_ms_$(date +%Y%m%d_%H%M%S).sql
+
+# Keep only the last 7 days
+find $BACKUP_DIR -name "tuition_ms_*.sql" -mtime +7 -delete
 ```
 
 ```bash
-chmod +x ~/backup-db.sh
+chmod +x ~/backup-tms-db.sh
 
-# Add to crontab for daily backups at 2 AM
+# Schedule daily at 2 AM
 crontab -e
-# Add: 0 2 * * * /home/username/backup-db.sh
+# Add: 0 2 * * * /home/YOUR_USERNAME/backup-tms-db.sh
 ```
 
 ---
@@ -654,33 +612,27 @@ crontab -e
 ### Backend Not Starting
 
 ```bash
-# Check logs
-pm2 logs hasal-products-backend
+pm2 logs tms-api
 
-# Common issues:
-# 1. Port 3000 already in use
-sudo lsof -i :3000
+# Port 3003 already in use?
+sudo lsof -i :3003
 sudo kill -9 <PID>
 
-# 2. Database connection failed
-# Check .env file and MySQL credentials
-mysql -u ape_news_user -p ape_news
+# Database connection failed?
+mysql -u tms_user -p tuition_ms
+# Also verify backend/.env credentials
 ```
 
-### Frontend Not Loading
+### Frontend Not Loading / 404 on Refresh
 
 ```bash
-# Check Nginx error logs
-sudo tail -f /var/log/nginx/hasal_products-error.log
+# Verify try_files is in nginx config
+sudo nginx -t
+sudo systemctl reload nginx
 
 # Verify files exist
-ls -la /var/www/hasal_products/frontend
-
-# Test Nginx configuration
-sudo nginx -t
-
-# Restart Nginx
-sudo systemctl restart nginx
+ls -la /var/www/tms/public/
+# Should contain: index.html, assets/
 ```
 
 ### 502 Bad Gateway
@@ -688,26 +640,39 @@ sudo systemctl restart nginx
 ```bash
 # Backend is not running
 pm2 status
-pm2 restart hasal_products-backend
+pm2 restart tms-api
 
-# Check backend is listening on port 3000
-sudo netstat -tlnp | grep 3000
+# Verify backend is listening
+sudo ss -tlnp | grep 3003
+```
+
+### CORS Errors in Browser
+
+```bash
+# .env CLIENT_ORIGIN must exactly match the browser's origin (no trailing slash)
+cat /var/www/tms/backend/.env | grep CLIENT_ORIGIN
+
+# Restart after any .env change
+pm2 restart tms-api
 ```
 
 ### Database Connection Issues
 
 ```bash
-# Test MySQL connection
-mysql -u ape_news_user -p ape_news
+mysql -u tms_user -p tuition_ms      # Test credentials
+sudo systemctl status mysql           # Check MySQL is running
+sudo systemctl restart mysql          # Restart if needed
+cat /var/www/tms/backend/.env         # Verify .env values
+```
 
-# Check MySQL is running
-sudo systemctl status mysql
+### Uploads Not Accessible
 
-# Restart MySQL
-sudo systemctl restart mysql
+```bash
+# Check uploads directory permissions
+ls -la /var/www/tms/backend/uploads/
 
-# Check backend .env file
-cat backend-project/.env
+# Fix permissions if needed
+sudo chmod -R 755 /var/www/tms/backend/uploads/
 ```
 
 ---
@@ -724,13 +689,8 @@ sudo apt install htop -y
 pm2 install pm2-server-monit
 ```
 
-### Set Up PM2 Web Dashboard
-
 ```bash
-# Install PM2 web interface
-pm2 install pm2-web
-
-# Access at: http://your_vps_ip:9615
+pm2 install pm2-server-monit
 ```
 
 ---
@@ -755,12 +715,16 @@ gzip_comp_level 6;
 gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
 ```
 
-### Configure Node.js for Production
-
-In PM2 configuration:
+### Run Backend in Cluster Mode
 
 ```bash
-pm2 start src/index.js --name hasal_products-backend -i max --node-args="--max-old-space-size=1024"
+# Use all CPU cores
+pm2 delete tms-api
+pm2 start /var/www/tms/backend/src/app.js \
+  --name tms-api \
+  -i max \
+  --node-args="--max-old-space-size=1024"
+pm2 save
 ```
 
 ---
@@ -786,36 +750,29 @@ If you encounter issues:
 
 ---
 
-## 🎉 Congratulations!
-
-Your Pharmacy POS System is now live on Hostinger VPS!
-
-**Access your application at:**
-
-- 🌐 Frontend: `http://your_vps_ip` or `https://yourdomain.com`
-- 🔌 Backend API: `http://your_vps_ip/api` or `https://yourdomain.com/api`
-
-**Default Login (if using seed data):**
-
-- Username: `admin`
-- Password: Check your seed file
-
----
-
 ## 📝 Post-Deployment Checklist
 
-- [ ] Backend is running via PM2
-- [ ] Database is created and seeded
-- [ ] Frontend is built and served by Nginx
-- [ ] API endpoints are accessible
-- [ ] Application login works
-- [ ] SSL certificate is installed (if using domain)
-- [ ] Firewall is configured
-- [ ] Backups are automated
-- [ ] Monitoring is set up
-- [ ] Deployment script is ready
+- [ ] MySQL `tuition_ms` database created with `tms_user`
+- [ ] `database/schema.sql` imported (tables + seed teacher account)
+- [ ] `backend/.env` configured (DB credentials, JWT secrets, `CLIENT_ORIGIN`)
+- [ ] Backend running via PM2 (`pm2 status` shows `tms-api` online)
+- [ ] Frontend built (`npm run build` in `frontend/`)
+- [ ] Built files copied to `/var/www/tms/public/`
+- [ ] Nginx configured and `sudo nginx -t` passes
+- [ ] `/health` endpoint responds correctly
+- [ ] Application login works (`teacher@tuition.local` / `Admin@1234`)
+- [ ] Default teacher password changed
+- [ ] SSL certificate installed (if using domain)
+- [ ] `CLIENT_ORIGIN` updated to `https://` after SSL
+- [ ] Firewall configured (`ufw status`)
+- [ ] PM2 auto-start on boot configured (`pm2 startup`)
+- [ ] Database backup script scheduled in cron
+- [ ] `deploy.sh` script tested
 
 ---
 
-**Last Updated:** December 2024  
-**Version:** 1.0.0
+**Project:** Tuition Management System  
+**Stack:** Vue 3 + PrimeVue 4 · Express.js · MySQL  
+**Backend port:** 3003  
+**Default login:** `teacher@tuition.local` / `Admin@1234`  
+**Last Updated:** March 2026

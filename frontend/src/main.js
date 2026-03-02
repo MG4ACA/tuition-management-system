@@ -6,9 +6,11 @@ import DialogService from 'primevue/dialogservice';
 import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
 import { createApp } from 'vue';
+import DataTableLabels from './plugins/datatableLabels';
 
 import 'primeflex/primeflex.css';
 import 'primeicons/primeicons.css';
+import './assets/responsive.css';
 
 import App from './App.vue';
 import router from './router';
@@ -30,5 +32,6 @@ app.use(ToastService);
 app.use(ConfirmationService);
 app.use(DialogService);
 app.directive('tooltip', Tooltip);
+app.use(DataTableLabels);
 
 app.mount('#app');

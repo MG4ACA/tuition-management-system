@@ -45,8 +45,8 @@
     >
       <Column field="name" header="Name" sortable style="min-width: 160px" />
       <Column field="phone" header="Phone" />
-      <Column field="parent_name" header="Parent" />
-      <Column field="parent_phone" header="Parent Phone" />
+      <Column field="parent_name" header="Parent" :pt="{ bodyCell: { class: 'mobile-hidden' } }" />
+      <Column field="parent_phone" header="Parent Phone" :pt="{ bodyCell: { class: 'mobile-hidden' } }" />
       <Column header="Portal">
         <template #body="{ data }">
           <div class="flex gap-1 flex-wrap">

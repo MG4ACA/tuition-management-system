@@ -120,4 +120,18 @@ async function handleLogin() {
   padding: 2.5rem;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
+
+@media (max-width: 767px) {
+  .login-wrapper {
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+
+  .login-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 12px;
+    box-shadow: none;
+    border: 1px solid var(--p-surface-border);
+  }
+}
 </style>
