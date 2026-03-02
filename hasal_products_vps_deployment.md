@@ -126,7 +126,7 @@ sudo mysql -u root -p
 CREATE DATABASE tuition_ms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Create dedicated user (replace 'StrongPassword123!' with your own)
-CREATE USER 'tms_user'@'localhost' IDENTIFIED BY 'StrongPassword123!';
+CREATE USER 'tms_user'@'localhost' IDENTIFIED BY 'Velou@123';
 
 -- Grant privileges
 GRANT ALL PRIVILEGES ON tuition_ms.* TO 'tms_user'@'localhost';
@@ -149,7 +149,7 @@ cd /var/www/tms
 
 ```bash
 # Clone the monorepo (frontend + backend in one repo)
-sudo git clone https://github.com/YOUR_USERNAME/tution-management-system.git .
+sudo git clone https://github.com/MG4ACA/tuition-management-system.git .
 
 # Set correct ownership
 sudo chown -R $USER:$USER /var/www/tms
@@ -161,7 +161,7 @@ sudo chmod -R 755 /var/www/tms
 ```bash
 cd /var/www/tms
 git fetch --all
-git pull origin main
+git pull origin development
 
 # If merge conflicts occur:
 git reset --hard origin/main
@@ -211,7 +211,7 @@ NODE_ENV=production
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=tms_user
-DB_PASSWORD=StrongPassword123!
+DB_PASSWORD=Velou@123
 DB_NAME=tuition_ms
 
 # ── JWT ──────────────────────────────────────────────────────
@@ -223,7 +223,7 @@ JWT_REFRESH_EXPIRES=7d
 
 # ── CORS ─────────────────────────────────────────────────────
 # Set to your domain (no trailing slash)
-CLIENT_ORIGIN=https://your-domain.com
+CLIENT_ORIGIN=https://tms.lumicore-labs.com
 
 # ── File Uploads ─────────────────────────────────────────────
 UPLOAD_DIR=uploads
@@ -303,7 +303,7 @@ nano /var/www/tms/frontend/.env.production
 ```
 
 ```env
-VITE_API_BASE_URL=https://your-domain.com/api
+VITE_API_BASE_URL=https://tms.lumicore-labs.com/api
 ```
 
 > If you don't have a domain yet, use your VPS IP:
@@ -351,7 +351,7 @@ upstream tms_backend {
 
 server {
     listen 80;
-    server_name your-domain.com www.your-domain.com;
+    server_name https://tms.lumicore-labs.com www.https://tms.lumicore-labs.com;
     # For IP-only (no domain): server_name your_vps_ip;
 
     # Security headers
@@ -444,7 +444,7 @@ sudo apt install certbot python3-certbot-nginx -y
 
 ```bash
 # Replace with your actual domain
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+sudo certbot --nginx -d https://tms.lumicore-labs.com -d www.https://tms.lumicore-labs.com
 ```
 
 Certbot automatically configures Nginx for HTTPS and sets up auto-renewal.
@@ -461,7 +461,7 @@ After SSL is active, update `CLIENT_ORIGIN` in `.env` to use `https://`:
 
 ```bash
 nano /var/www/tms/backend/.env
-# Change: CLIENT_ORIGIN=https://your-domain.com
+# Change: CLIENT_ORIGIN=https://tms.lumicore-labs.com
 
 pm2 restart tms-api
 ```
@@ -492,7 +492,7 @@ curl http://localhost:3003/api/auth/me
 
 Open your browser:
 
-- `http://your_vps_ip` (or `https://your-domain.com`)
+- `http://your_vps_ip` (or `https://tms.lumicore-labs.com`)
 - Login with `teacher@tuition.local` / `Admin@1234`
 
 ---

@@ -59,7 +59,7 @@ app.use((err, _req, res, _next) => {
 });
 
 // ── Start ────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3003;
 app.listen(PORT, () => console.log(`🚀 API running on http://localhost:${PORT}`));
 
 module.exports = app;
