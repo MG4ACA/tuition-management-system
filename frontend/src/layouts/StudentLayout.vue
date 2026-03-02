@@ -7,7 +7,7 @@
         <span class="font-bold">TuitionMS</span>
         <Tag value="Student" severity="success" class="ml-2 badge-tag" />
       </div>
-      <nav class="desktop-nav flex gap-2">
+      <nav class="desktop-nav gap-2">
         <RouterLink
           v-for="item in menuItems"
           :key="item.to"

@@ -307,6 +307,7 @@ import Dialog from 'primevue/dialog';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
 import MultiSelect from 'primevue/multiselect';
 import Password from 'primevue/password';
 import Select from 'primevue/select';

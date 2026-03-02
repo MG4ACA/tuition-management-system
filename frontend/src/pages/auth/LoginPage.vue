@@ -46,9 +46,22 @@
         />
       </form>
 
-      <div class="text-center mt-4 text-sm text-color-secondary">
-        <i class="pi pi-lock mr-1" />
-        Contact your teacher to get access credentials.
+      <!-- Demo account quick-fill -->
+      <div class="demo-section mt-4">
+        <p class="demo-label">Demo accounts</p>
+        <div class="demo-chips">
+          <button
+            v-for="demo in demoAccounts"
+            :key="demo.role"
+            type="button"
+            class="demo-chip"
+            :class="`demo-chip--${demo.role}`"
+            @click="fillDemo(demo)"
+          >
+            <i :class="demo.icon" class="mr-1" />
+            {{ demo.label }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -72,6 +85,37 @@ const form = ref({ email: '', password: '' });
 const errors = ref({});
 const loading = ref(false);
 const errorMsg = ref('');
+
+const demoAccounts = [
+  {
+    role: 'teacher',
+    label: 'Teacher',
+    icon: 'pi pi-user',
+    email: 'teacher@tuition.local',
+    password: 'Admin@1234',
+  },
+  {
+    role: 'student',
+    label: 'Student',
+    icon: 'pi pi-book',
+    email: 'student1@student.local',
+    password: 'Student@1234',
+  },
+  {
+    role: 'parent',
+    label: 'Parent',
+    icon: 'pi pi-users',
+    email: 'parent1@parent.local',
+    password: 'Parent@1234',
+  },
+];
+
+function fillDemo(demo) {
+  form.value.email = demo.email;
+  form.value.password = demo.password;
+  errors.value = {};
+  errorMsg.value = '';
+}
 
 function validate() {
   errors.value = {};
@@ -133,5 +177,63 @@ async function handleLogin() {
     box-shadow: none;
     border: 1px solid var(--p-surface-border);
   }
+}
+
+/* ── Demo accounts ── */
+.demo-section {
+  border-top: 1px dashed var(--p-surface-border);
+  padding-top: 0.85rem;
+}
+
+.demo-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--p-text-muted-color, #94a3b8);
+  margin: 0 0 0.55rem;
+  text-align: center;
+}
+
+.demo-chips {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.demo-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid;
+  cursor: pointer;
+  transition:
+    opacity 0.15s,
+    transform 0.1s;
+  background: transparent;
+}
+
+.demo-chip:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+.demo-chip:active {
+  transform: translateY(0);
+}
+
+.demo-chip--teacher {
+  color: #6366f1;
+  border-color: #6366f1;
+}
+.demo-chip--student {
+  color: #22c55e;
+  border-color: #22c55e;
+}
+.demo-chip--parent {
+  color: #f59e0b;
+  border-color: #f59e0b;
 }
 </style>
